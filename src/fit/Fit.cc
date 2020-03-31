@@ -553,7 +553,7 @@ void Fit::get_sum(arma::mat rmse, arma::Mat<float> tcorr, float threshold , floa
      float sum_rmse = 0;
      for (int ii=0; ii<nelem; ii++){
         if (tcorr(ii,0) > threshold){
-            sum_rmse = sum_rmse + rmse((ii,0));
+            sum_rmse = sum_rmse + rmse(ii,0);
             num_coherent_pixels++;
         }
      }
