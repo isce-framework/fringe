@@ -16,7 +16,7 @@
 ```
 #clang compiler
 > sudo port install clang-8.0
-> sudo port select mp-clang-8.0
+> sudo port select clang mp-clang-8.0
 
 
 #Python and cython
@@ -27,6 +27,9 @@
 
 #gdal
 > sudo port install gdal py37-gdal
+
+#cmake
+> sudo port install cmake
 ```
 
 You will also need to install isce2 for using the workflows.
