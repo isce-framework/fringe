@@ -15,9 +15,9 @@ set(EVD_LIBS    ${ARMADILLO_LIBRARIES}
 
 ##Section for C++ Executable
 add_executable(evd ${EVD_SRCS})
-set_target_properties(evd PROPERTIES COMPILE_FLAGS "-fopenmp -O3" LINK_FLAGS "-fopenmp")
 target_include_directories(evd PUBLIC  ${EVD_INCS})
 target_link_libraries(evd PUBLIC ${EVD_LIBS})
+target_link_libraries(evd PRIVATE OpenMP::OpenMP_CXX)
 
 install (TARGETS 
         evd
@@ -31,9 +31,8 @@ set_source_files_properties(
     PROPERTIES CYTHON_IS_CXX TRUE)
 cython_add_module(evdlib evdlib.pyx)
 target_include_directories(evdlib PUBLIC ${EVD_INCS} .)
-set_target_properties(evdlib PROPERTIES COMPILE_FLAGS "-fopenmp -O3")
 target_link_libraries(evdlib PUBLIC ${EVD_LIBS}) 
-
+target_link_libraries(evdlib PRIVATE OpenMP::OpenMP_CXX)
 
 ###Final installation
 install (TARGETS
