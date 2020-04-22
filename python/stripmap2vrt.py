@@ -22,7 +22,8 @@ def cmdLineParse():
             default='geometry', help='Directory with geometry vrts')
     parser.add_argument('-c', '--slcs', dest='outdir', type=str,
             default='slcs', help='Directory with individual slc vrts')
-    parser.add_argument('-b', '--bbox', dest='bbox', nargs='+' , type=int, default=None,
+
+    parser.add_argument('-b', '--bbox', dest='bbox', nargs=4, type=int, default=None, metavar=('Y0','Y1','X0','X1'),
             help='bounding box : minLine maxLine minPixel maxPixel')
 
     inps = parser.parse_args()

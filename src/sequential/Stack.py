@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-import glob
 import os
+import glob
 import gdal
+import isce
+from isceobj.Util.ImageUtil import ImageLib as IML
+
 
 vrttmpl='''
 <VRTDataset rasterXSize="{width}" rasterYSize="{height}">
@@ -86,6 +89,13 @@ class Stack(object):
 
             print("*****")
             print(slc)
+
+            # fix potential filepath in xml file if dir has been moved.
+            img = IML.loadImage(slc)[0]
+            img.filename = slc
+            img.setAccessMode('READ')
+            img.renderHdr()
+
             ds = gdal.Open(slc + '.vrt', gdal.GA_ReadOnly)
             width = ds.RasterXSize
             height = ds.RasterYSize
