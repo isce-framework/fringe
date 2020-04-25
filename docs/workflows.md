@@ -50,10 +50,10 @@ To compute the amplitude dispersion of different pixels:
 ampdispersion.py -i coreg_stack/slcs_base.vrt -o ampDispersion/ampdispersion -m ampDispersion/mean
 ```
 
-To choose the PS pixels one can simply threshold the amplitude dispersion using a custom script. Here is an example using ISCE's imageMath funstion to threshold the PS pixels with a threshold of 0.4: 
+To choose the PS pixels one can simply threshold the amplitude dispersion using a custom script. Here is an example using ISCE's imageMath function to threshold the PS pixels with a threshold of 0.4: 
 
 ```
-imageMath.py -e="a<0.4" --a=ampDispersion/ampdispersion  -o ps_pixels -t byte
+imageMath.py -e="a<0.4" --a=ampDispersion/ampdispersion  -o ampDispersion/ps_pixels -t byte
 ```
 
 ### Integrate PS pixels to the wrapped phase series
@@ -61,7 +61,7 @@ imageMath.py -e="a<0.4" --a=ampDispersion/ampdispersion  -o ps_pixels -t byte
 For PS pixels we extract the wrapped phase series of the SLCs through time and integrate to the maps of wrapped phase time-series from the previous step. As a result of this step the wrapped phase time-series of PS and DS pixels are obtained in which the phase series of DS pixels were estimated from full covariance analysis over local neighborhoods as explained above and for PS pixels the wrapped phase series was extracted from SLCs.
 
 ```
-integratePS.py -s coreg_stack/slcs_base.vrt -d adjusted_wrapped_DS/ -t Sequential/Datum_connection/EVD/tcorr.bin -p ampDispersion/ps_pixels -o PS_DS -c cor
+integratePS.py -s coreg_stack/slcs_base.vrt -d adjusted_wrapped_DS/ -t Sequential/Datum_connection/EVD/tcorr.bin -p ampDispersion/ps_pixels -o PS_DS --unwrap_method snaphu
 ```
 
 ## Phase 2: Wrapped time-series to deformation time-series
@@ -71,13 +71,15 @@ FRInGE currently is focused on estimating wrapped phase time-series for PS and D
 
 ### Unwrap the wrapped phase series
 
-To prepare unwrapping commands for each epoch of time-series run unwrapStacck.py:
+To prepare unwrapping commands for each epoch of time-series run `unwrapStack.py`. This will write the unwrapping command to a shell script _run_unwrap.sh_.
 
 ```
-unwrapStacck.py -s slcs -m Sequential/miniStacks/ -d Sequential/Datum_connection/  -M 15 -o unwrapped
+unwrapStack.py -s slcs -m Sequential/miniStacks/ -d Sequential/Datum_connection/ -M 15 -u 'unwrap_fringe.py -m snaphu'
 ```
 
-By running the command above, the unwrapping commands will be written to shell script. Each row of the run file is then the unwrapping command for each epoch which is indpendent from other epochs and therefore unwrapping different epochs can be run in parallel if computing resourses such as clusters are available.  
+Alternatively one may use `integratePS.py --unw_method snaphu` in previous step, which will write a shell script _run_unwrap_ps_ds.sh_ (recommended).
+
+Each row of the run file is then the unwrapping command for each epoch which is indpendent from other epochs and therefore unwrapping different epochs can be run in parallel if computing resourses such as clusters are available.  
 
 TODO: 
 ingest FRInGE unwrapped phase series to MintPy ...
