@@ -265,7 +265,7 @@ def main(iargs=None):
 
         # write the unwrapping command for this pair
         unwrapName = os.path.join(unwDir, "{0}_{1}.unw".format(date_i, date_j))
-        cmd = "unwrap_fringe.py -m phass -i " + outName + " -c " + corName + " -o " + unwrapName
+        cmd = "unwrap_fringe.py -m snaphu -i " + outName + " -c " + corName + " -o " + unwrapName
         runf.write(cmd + "\n")
         
     runf.close()

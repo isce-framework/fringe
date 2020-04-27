@@ -6,5 +6,6 @@ install (PROGRAMS   uavsar2vrt.py
                     unwrapStack.py 
                     Network.py
                     StackVRT.py
+                    integratePS.py
         DESTINATION ${FRINGE_BINDIR}
         COMPONENT python)
