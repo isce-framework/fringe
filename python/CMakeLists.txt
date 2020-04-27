@@ -4,5 +4,7 @@ install (PROGRAMS   uavsar2vrt.py
                     adjustMiniStacks.py
                     unwrap_fringe.py 
                     unwrapStack.py 
+                    Network.py
+                    StackVRT.py
         DESTINATION ${FRINGE_BINDIR}
         COMPONENT python)
