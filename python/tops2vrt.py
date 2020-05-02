@@ -23,10 +23,10 @@ def cmdLineParse():
     parser.add_argument('-c', '--slcs', dest='outdir', type=str,
             default='slcs', help='Directory where the individual slc vrts will be stored (default is "slcs")')
 
-    parser.add_argument('-b', '--bbox', dest='bbox', nargs='+' , type=int, default=None,
-            help='bounding box : minLine maxLine minPixel maxPixel')
+    parser.add_argument('-b', '--bbox', dest='bbox', nargs=4, type=int, default=None, metavar=('Y0','Y1','X0','X1'),
+            help='bounding box in row col: minLine maxLine minPixel maxPixel')
 
-    parser.add_argument('-B', '--geo_bbox', dest='geobbox', nargs='+' , type=float, default=None,
+    parser.add_argument('-B', '--geo_bbox', dest='geobbox', nargs=4, type=float, default=None, metavar=('S', 'N', 'W', 'E'),
             help='bounding box in lat lon: South North West East')
 
     inps = parser.parse_args()
