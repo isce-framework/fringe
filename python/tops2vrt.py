@@ -71,22 +71,21 @@ def lonlat2pixeline(lonFile, latFile, lon, lat):
 
 def getLinePixelBbox(geobbox, latFile, lonFile):
 
-   south,north, west, east = geobbox
+    south,north, west, east = geobbox
 
-   se = lonlat2pixeline(lonFile, latFile, east, south)
-   nw = lonlat2pixeline(lonFile, latFile, west, north)
+    se = lonlat2pixeline(lonFile, latFile, east, south)
+    nw = lonlat2pixeline(lonFile, latFile, west, north)
 
-   ymin = np.int(np.round(np.min([se[1], nw[1]])))
-   ymax = np.int(np.round(np.max([se[1], nw[1]])))
+    ymin = np.int(np.round(np.min([se[1], nw[1]])))
+    ymax = np.int(np.round(np.max([se[1], nw[1]])))
 
-   xmin = np.int(np.round(np.min([se[0], nw[0]])))
-   xmax = np.int(np.round(np.max([se[0], nw[0]])))
+    xmin = np.int(np.round(np.min([se[0], nw[0]])))
+    xmax = np.int(np.round(np.max([se[0], nw[0]])))
 
+    print("x min-max: ", xmin, xmax)
+    print("y min-max: ", ymin, ymax)
 
-   print("x min-max: ", xmin, xmax)
-   print("y min-max: ", ymin, ymax)
-
-   return ymin, ymax, xmin, xmax
+    return ymin, ymax, xmin, xmax
 
 
 if __name__ == '__main__':
@@ -99,9 +98,10 @@ if __name__ == '__main__':
 
     ###Get ann list and slc list
     slclist = glob.glob(os.path.join(inps.indir,'SLC','*','*.slc.full'))
+    num_slc = len(slclist)
 
-    print('Number of SLCs discovered: ', len(slclist))
-    print('We assume that the SLCs and the vrt files are sorted in the same order')
+    print('number of SLCs discovered: ', num_slc)
+    print('we assume that the SLCs and the vrt files are sorted in the same order')
     
     slclist.sort()
 
@@ -109,10 +109,10 @@ if __name__ == '__main__':
     ###Read the first ann file to get some basic things like dimensions
     ###Just walk through each of them and create a separate VRT first
     if not os.path.exists(inps.outdir):
-        print('Creating directory: {0}'.format(inps.outdir))
+        print('creating directory: {0}'.format(inps.outdir))
         os.makedirs(inps.outdir)
     else:
-        print('Directory {0} already exists.'.format(inps.outdir))
+        print('directory "{0}" already exists.'.format(inps.outdir))
 
     data = []
     dates = []
@@ -120,6 +120,7 @@ if __name__ == '__main__':
     width = None
     height = None
 
+    print('write vrt file for each SLC ...')
     for ind, slc in enumerate(slclist):
 
         ###Parse the vrt file information.
@@ -137,7 +138,6 @@ if __name__ == '__main__':
         metadata['ACQUISITION_TIME'] = os.path.basename(os.path.dirname(slc))
         
         path = os.path.abspath(slc)
-        #path = slc
 
         tag = metadata['ACQUISITION_TIME'] 
 
@@ -156,22 +156,23 @@ if __name__ == '__main__':
 #        outname =  datetime.datetime.strptime(tag.upper(), '%d-%b-%Y %H:%M:%S UTC').strftime('%Y%m%d')
 
         outname = metadata['ACQUISITION_TIME']
-        with open( os.path.join(inps.outdir, '{0}.vrt'.format(outname)) , 'w') as fid:
+        out_file = os.path.join(inps.outdir, '{0}.vrt'.format(outname))
+        print('{} / {}: {}'.format(ind+1, num_slc, out_file))
+        with open(out_file, 'w') as fid:
             fid.write( vrttmpl.format(width=width,
                                      height=height,
                                      PATH=path,
                                      linewidth=8*width))
 
-        
         data.append(metadata)
         dates.append(outname)
 
 
     ####Set up single stack file
     if os.path.exists( inps.stackdir):
-        print('Stack directory: {0} already exists'.format(inps.stackdir))
+        print('stack directory: {0} already exists'.format(inps.stackdir))
     else:
-        print('Creating stack directory: {0}'.format(inps.stackdir))
+        print('creating stack directory: {0}'.format(inps.stackdir))
         os.makedirs(inps.stackdir)    
 
     latFile = os.path.join(inps.indir, "geom_master", "lat.rdr.full.vrt")
@@ -180,7 +181,7 @@ if __name__ == '__main__':
     # setting up a subset of the stack
     if inps.geobbox:
         # if the bounding box in geo-coordinate is given, this has priority
-        print("finding bbox based on geo coordinates")
+        print("finding bbox based on geo coordinates of {} ...".format(inps.geobbox))
         ymin, ymax, xmin, xmax = getLinePixelBbox(inps.geobbox, latFile, lonFile)
 
     elif inps.bbox:
@@ -195,7 +196,9 @@ if __name__ == '__main__':
     xsize = xmax - xmin
     ysize = ymax - ymin
 
-    with open( os.path.join(inps.stackdir, 'slcs_base.vrt'), 'w') as fid:
+    slcs_base_file = os.path.join(inps.stackdir, 'slcs_base.vrt')
+    print('write vrt file for stack directory')
+    with open(slcs_base_file, 'w') as fid:
         fid.write( '<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">\n'.format(xsize=xsize, ysize=ysize))
 
         for ind, (date, meta) in enumerate( zip(dates, data)):
@@ -225,9 +228,9 @@ if __name__ == '__main__':
     ####Set up latitude, longitude and height files
     
     if os.path.exists( inps.geomdir):
-        print('Directory {0} already exists.'.format(inps.geomdir))
+        print('directory {0} already exists.'.format(inps.geomdir))
     else:
-        print('Creating geometry directory: {0}'.format(inps.geomdir))
+        print('creating geometry directory: {0}'.format(inps.geomdir))
         os.makedirs( inps.geomdir)
 
 
@@ -244,8 +247,8 @@ if __name__ == '__main__':
     </VRTRasterBand>
 </VRTDataset>'''
 
+    print('write vrt file for geometry dataset')
     layers = ['lat', 'lon', 'hgt']
-
     for ind, val in enumerate(layers):
         with open( os.path.join(inps.geomdir, val+'.vrt'), 'w') as fid:
             fid.write( vrttmpl.format( xsize = xsize, ysize = ysize,

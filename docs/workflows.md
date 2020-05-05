@@ -17,7 +17,7 @@ FRInGE requires a coregistered stack of SLC images to work with. One may use dif
 Assuming ISCE2 stack processor has been used to create the coregistered stack of Sentinel-1 SLCs, the `tops2vrt.py` command can be used to create a VRT file which points to a subset of the dataset for further processing with FRInGE:
 
 ```
-tops2vrt.py -i ../slc_stack/merged/ -s coreg_stack -g geometry -c slcs -B 37.85 38.034 -121.9 -122.15
+tops2vrt.py -i ../merged/ -s coreg_stack -g geometry -c slcs -B 37.85 38.034 -121.9 -122.15
 ```
 
 ### Finding the local neighborhood of each pixel
@@ -33,7 +33,7 @@ nmap.py -i coreg_stack/slcs_base.vrt -o KS2/nmap -c KS2/count -x 11 -y 5
 When the local neighborhood map is ready, one can estimate the wrapped phase time-series for DS pixels using the full covariance matrix of the entire stack using the `evd.py` command. Alternatively one may choose to break the stack to smaller mini-stacks and estimate a wrapped phase series for each mini-stack which can then be connected to each other using compressed SLCs: 
 
 ```
-sequential.py -i ../slc_stack/merged/SLC -s 15 -o Sequential -w KS2/nmap -b 3200 4907 33084 38459 -x 11 -y 5
+sequential.py -i ../merged/SLC -s 15 -o Sequential -w KS2/nmap -b 3200 4907 33084 38459 -x 11 -y 5
 ```
 
 The wrapped phase series of mini-stacks can be then connected using the `adjustMiniStacks.py` command:
