@@ -33,7 +33,7 @@ nmap.py -i coreg_stack/slcs_base.vrt -o KS2/nmap -c KS2/count -x 11 -y 5
 When the local neighborhood map is ready, one can estimate the wrapped phase time-series for DS pixels using the full covariance matrix of the entire stack using the `evd.py` command. Alternatively one may choose to break the stack to smaller mini-stacks and estimate a wrapped phase series for each mini-stack which can then be connected to each other using compressed SLCs: 
 
 ```
-sequential.py -i ../merged/SLC -s 15 -o Sequential -w KS2/nmap -b 3200 4907 33084 38459 -x 11 -y 5
+sequential.py -i ../merged/SLC -s 15 -o Sequential -w KS2/nmap -b coreg_stack/slcs_base.vrt -x 11 -y 5
 ```
 
 The wrapped phase series of mini-stacks can be then connected using the `adjustMiniStacks.py` command:

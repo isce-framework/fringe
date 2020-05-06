@@ -46,6 +46,8 @@ def runAmpdispersion(indict):
 
     aa.run()
 
+    return
+
 
 if __name__ == '__main__':
     '''
@@ -59,4 +61,12 @@ if __name__ == '__main__':
         os.makedirs(outDir)
 
     runAmpdispersion(inps)
+
+    # create xml file if missing
+    for fname in [inps.outputDS, inps.meanampDS]:
+        if not os.path.isfile(fname+'.xml'):
+            cmd = 'gdal2isce_xml.py -i {}'.format(fname)
+            print(cmd)
+            os.system(cmd)
+
 
