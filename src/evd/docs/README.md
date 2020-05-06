@@ -52,8 +52,7 @@ For full details on the processing approach, see references.
 
 1. Ansari, H., De Zan, F., Adam, N., Goel, K., & Bamler, R. (2016, July). Sequential estimator for distributed scatterer interferometry. In Geoscience and Remote Sensing Symposium (IGARSS), 2016 IEEE International (pp. 6859-6862). IEEE.
 
-2. Ansari, H., De Zan, F., & Bamler, R. (2017). Sequential Estimator- A Proposal for High-Precision and Efficient Earth Deformation Monitoring with InSAR [FRINGE 2017 Presentation](http://fringe.esa.int/files/presentation324.pdf) 
-
+2. Ansari, H., De Zan, F., & Bamler, R. (2017). Sequential Estimator- A Proposal for High-Precision and Efficient Earth Deformation Monitoring with InSAR [FRINGE 2017 Presentation](http://fringe2017.esa.int/files/presentation324.pdf) 
 
 3. A. Monti Guarnieri and S. Tebaldini, “On the Exploitation of Target Statistics for SAR Interferometry Applications,” IEEE Trans. Geosci. Remote Sens., vol. 46, no. 11, pp. 3436–3443, Nov. 2008.
 

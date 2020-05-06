@@ -32,11 +32,13 @@ def cmdLineParser():
             required=True, help='size of each miniStack')
 
     parser.add_argument('-o', '--outDir', type=str, dest='outDir',
-            required=True, help='output directory')
+            required=False, help='output directory')
 
     parser.add_argument('-u', '--unwrapper_script', type=str, dest='unwrapperScript',
-            default="unwrap_fringe.py", help='unwraper script. e.g., unwrap.py')
-    
+            default="unwrap_fringe.py", help='unwraper script. e.g., unwrap_fringe.py')
+
+    parser.add_argument('--unw_method','--unwrap_method', type=str, dest='unwrapMethod',
+            default='phass', choices=('snaphu','phass'), help='unwrap method.')
 
     return parser.parse_args()
 
@@ -173,7 +175,7 @@ if __name__ == '__main__':
         print("coherence: ", coh) 
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m phass -i " + miniStackSlc + " -c " + coh + " -o " + output
+        cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output
         runf.write(cmd + "\n") 
 
     for k in datumDict.keys():
@@ -185,7 +187,7 @@ if __name__ == '__main__':
         print("coherence: ", coh)
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m phass -i " + datumSlc + " -c " + coh + " -o " + output
+        cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output
         runf.write(cmd + "\n")
 
     runf.close()
