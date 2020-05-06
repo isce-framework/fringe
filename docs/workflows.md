@@ -33,13 +33,13 @@ nmap.py -i coreg_stack/slcs_base.vrt -o KS2/nmap -c KS2/count -x 11 -y 5
 When the local neighborhood map is ready, one can estimate the wrapped phase time-series for DS pixels using the full covariance matrix of the entire stack using the `evd.py` command. Alternatively one may choose to break the stack to smaller mini-stacks and estimate a wrapped phase series for each mini-stack which can then be connected to each other using compressed SLCs: 
 
 ```
-sequential.py -i ../slc_stack/merged/SLC -s 15 -o Sequential -w KS2/nmap -b 3200 4907 33084 38459 -x 11 -y 5
+sequential.py -i ../slc_stack/merged/SLC -s 15 -o sequential -w KS2/nmap -b 3200 4907 33084 38459 -x 11 -y 5
 ```
 
 The wrapped phase series of mini-stacks can be then connected using the `adjustMiniStacks.py` command:
 
 ```
-adjustMiniStacks.py -s slcs/ -m Sequential/miniStacks/ -d Sequential/Datum_connection/ -M 15 -o adjusted_wrapped_DS
+adjustMiniStacks.py -s slcs/ -m sequential/miniStacks/ -d sequential/Datum_connection/ -M 15 -o adjusted_wrapped_DS
 ```
 
 ### PS selection
@@ -61,7 +61,7 @@ imageMath.py -e="a<0.4" --a=ampDispersion/ampdispersion  -o ampDispersion/ps_pix
 For PS pixels we extract the wrapped phase series of the SLCs through time and integrate to the maps of wrapped phase time-series from the previous step. As a result of this step the wrapped phase time-series of PS and DS pixels are obtained in which the phase series of DS pixels were estimated from full covariance analysis over local neighborhoods as explained above and for PS pixels the wrapped phase series was extracted from SLCs.
 
 ```
-integratePS.py -s coreg_stack/slcs_base.vrt -d adjusted_wrapped_DS/ -t Sequential/Datum_connection/EVD/tcorr.bin -p ampDispersion/ps_pixels -o PS_DS --unwrap_method snaphu
+integratePS.py -s coreg_stack/slcs_base.vrt -d adjusted_wrapped_DS/ -t sequential/Datum_connection/EVD/tcorr.bin -p ampDispersion/ps_pixels -o PS_DS --unwrap_method snaphu
 ```
 
 ## Phase 2: Wrapped time-series to deformation time-series
@@ -74,7 +74,7 @@ FRInGE currently is focused on estimating wrapped phase time-series for PS and D
 To prepare unwrapping commands for each epoch of time-series run `unwrapStack.py`. This will write the unwrapping command to a shell script _run_unwrap.sh_.
 
 ```
-unwrapStack.py -s slcs -m Sequential/miniStacks/ -d Sequential/Datum_connection/ -M 15 -u 'unwrap_fringe.py -m snaphu'
+unwrapStack.py -s slcs -m sequential/miniStacks/ -d sequential/Datum_connection/ -M 15 -u 'unwrap_fringe.py -m snaphu'
 ```
 
 Alternatively one may use `integratePS.py --unw_method snaphu` in previous step, which will write a shell script _run_unwrap_ps_ds.sh_ (recommended).
