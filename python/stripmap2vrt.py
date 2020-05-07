@@ -82,8 +82,7 @@ if __name__ == '__main__':
 
         tag = metadata['ACQUISITION_TIME'] 
 
-        vrttmpl='''
-<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
+        vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
     <VRTRasterBand dataType="CFloat32" band="1" subClass="VRTRawRasterBand">
         <sourceFilename>{PATH}</sourceFilename>
         <ImageOffset>0</ImageOffset>
@@ -160,8 +159,7 @@ if __name__ == '__main__':
 
 
     
-    vrttmpl='''
-<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
+    vrttmpl='''<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
     <VRTRasterBand dataType="Float64" band="1" subClass="VRTRawRasterBand">
         <SourceFilename>{PATH}</SourceFilename>
         <ImageOffset>0</ImageOffset>

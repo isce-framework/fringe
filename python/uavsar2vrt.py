@@ -84,8 +84,7 @@ if __name__ == '__main__':
 
         tag = metadata['ACQUISITION_TIME'] 
 
-        vrttmpl='''
-<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
+        vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
     <VRTRasterBand dataType="CFloat32" band="1" subClass="VRTRawRasterBand">
         <sourceFilename>{PATH}</sourceFilename>
         <ImageOffset>0</ImageOffset>
@@ -160,8 +159,7 @@ if __name__ == '__main__':
     mlwidth = parser['llh_{0} Columns'.format(llhlookstag)]
     mlheight = parser['llh_{0} Rows'.format(llhlookstag)]
 
-    vrttmpl='''
-<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
+    vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
     <VRTRasterBand dataType="Float32" band="1" subClass="VRTRawRasterBand">
         <SourceFilename>{PATH}</SourceFilename>
         <ImageOffset>{ioff}</ImageOffset>
@@ -172,8 +170,7 @@ if __name__ == '__main__':
 </VRTDataset>'''
 
 
-    vrtstretchtmpl='''
-<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
+    vrtstretchtmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
     <VRTRasterBand dataType="Float32" band="1">
         <SimpleSource resampling="bilinear">
             <SourceFilename>{src}</SourceFilename>

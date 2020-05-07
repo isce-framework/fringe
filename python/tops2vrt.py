@@ -141,8 +141,7 @@ if __name__ == '__main__':
 
         tag = metadata['ACQUISITION_TIME'] 
 
-        vrttmpl='''
-<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
+        vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
     <VRTRasterBand dataType="CFloat32" band="1" subClass="VRTRawRasterBand">
         <sourceFilename>{PATH}</sourceFilename>
         <ImageOffset>0</ImageOffset>
@@ -234,13 +233,12 @@ if __name__ == '__main__':
         os.makedirs( inps.geomdir)
 
 
-    vrttmpl='''
-<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
+    vrttmpl='''<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
     <VRTRasterBand dataType="Float64" band="1">
       <SimpleSource>
         <SourceFilename>{PATH}</SourceFilename>
         <SourceBand>1</SourceBand>
-        <SourceProperties RasterXSize={width} RasterYSize={height} DataType="Float64"/>
+        <SourceProperties RasterXSize="{width}" RasterYSize="{height}" DataType="Float64"/>
         <SrcRect xOff="{xmin}" yOff="{ymin}" xSize="{xsize}" ySize="{ysize}"/>
         <DstRect xOff="0" yOff="0" xSize="{xsize}" ySize="{ysize}"/>
       </SimpleSource>
