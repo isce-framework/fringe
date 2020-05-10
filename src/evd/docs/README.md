@@ -34,7 +34,7 @@ For full details on the processing approach, see references.
 
 4. For Hermitian matrix inverse, we use [zportf](http://www.netlib.org/lapack/explore-3.1.1-html/zpotrf.f.html) followed by [zpotri](http://www.netlib.org/lapack/explore-3.1.1-html/zpotri.f.html).
 
-5. All the symbol bindings can be found under [include/fringe/EigenLapack.hpp](../../../include/cstamps/EigenLapack.hpp) in the code base. 
+5. All the symbol bindings can be found under [include/fringe/EigenLapack.hpp](../../../include/fringe/EigenLapack.hpp) in the code base. 
 
 6. EVD will need to be linked against lapack and blas/f77blas. On OS X, we rely on atlas to provide these packages. On linux, we have tested this with conda. 
 
@@ -56,7 +56,7 @@ For full details on the processing approach, see references.
 
 3. A. Monti Guarnieri and S. Tebaldini, “On the Exploitation of Target Statistics for SAR Interferometry Applications,” IEEE Trans. Geosci. Remote Sens., vol. 46, no. 11, pp. 3436–3443, Nov. 2008.
 
-4. A. M. Guarnieri and S. Tebaldini, “Hybrid Cramér-Rao Bounds for Crustal Displacement Field Estimators in SAR Interferometry,” IEEE Signal Process. Lett., vol. 14, no. 12, pp. 1012–1015, Dec. 2007.
+4. A. M. Guarnieri and S. Tebaldini, “Hybrid Cramér-Rao Bounds for Crustal Displacement Field Estimators in SAR Interferometry,” IEEE Signal Process. Lett., vol. 14, no. 12, pp. 1012–1015, Dec. 2007.
 
 5. A. Ferretti, A. Fumagalli, F. Novali, C. Prati, F. Rocca, and A. Rucci, “A New Algorithm for Processing Interferometric Data-Stacks: SqueeSAR,” IEEE Trans. Geosci. Remote Sens., vol. 49, no. 9, pp. 3460–3470, Sep. 2011.
 

@@ -9,9 +9,11 @@ The stack is expected to be provided as a GDAL VRT file. The Metadata section of
 
 The mask dataset is an optional input and is often used to mask out water in the image. The mask dataset is interpreted as zero/ non-zero.
 
-![ampdispersion equation](./equation.png "Amplitude dispersion equation")
+<p align="center">
+  <img width="400" src="./equation.png">
+</p> 
 
-###References
+### References
 
 1. Ferretti, A., Prati, C. and Rocca, F., 2001. Permanent scatterers in SAR interferometry. IEEE Transactions on geoscience and remote sensing, 39(1), pp.8-20.
 

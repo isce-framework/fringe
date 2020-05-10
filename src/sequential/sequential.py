@@ -30,8 +30,8 @@ def cmdLineParser():
     parser.add_argument('-m', '--minneigh', type=int, dest='minNeighbors',
             default=5, help='Minimum number of neighbors for computation')
 
-    parser.add_argument('-b', '--bbox', dest='bbox', nargs='+' , type=int, default=None,
-            help='bounding box : minLine maxLine minPixel maxPixel')
+    parser.add_argument('-b', '--bbox', dest='bbox', nargs='+' , type=str, default=None,
+            help='bounding box : minLine maxLine minPixel maxPixel \nORcoreg_stack/slcs_base.vrt')
     parser.add_argument('-s', '--mini_stack_size', type=int, dest='miniStackSize',
             default=10, help='mini stack size')
 
@@ -39,6 +39,26 @@ def cmdLineParser():
             default=False, help='Force reprocessing')
 
     return parser.parse_args()
+
+
+def vrt_file2bbox(vrt_file):
+    '''
+    Grab bounding box info from VRT file
+    '''
+    import defusedxml.ElementTree as ET
+    print('read bbox info from VRT file: {}'.format(vrt_file))
+
+    root = ET.parse(vrt_file).getroot()
+    type_tag = root.find('VRTRasterBand/SimpleSource/SrcRect')
+    xmin = int(type_tag.get('xOff'))
+    ymin = int(type_tag.get('yOff'))
+    xsize = int(type_tag.get('xSize'))
+    ysize = int(type_tag.get('ySize'))
+    xmax = xmin + xsize
+    ymax = ymin + ysize
+
+    bbox = (ymin, ymax, xmin, xmax)
+    return bbox
 
 
 def runEvd(inps, inputDataset, weightDS, outDir, miniStackCount, compressedSlcDir=None, compressedSlcName=None):
@@ -138,7 +158,16 @@ if __name__ == '__main__':
     # get vrt files for whole stack
 
     stack = Stack(inps.inputDir)
+
+    # read bounding box input
+    if inps.bbox is not None:
+        if os.path.isfile(inps.bbox[0]):
+            inps.bbox = vrt_file2bbox(inps.bbox[0])
+        else:
+            inps.bbox = tuple([int(i) for i in inps.bbox])
+        print('input bounding box in (y0, y1, x0, x1): {}'.format(inps.bbox))
     stack.bbox = inps.bbox
+
     stack.gatherSLCs()
     stack.getDates()
     stack.configure(outDir)
