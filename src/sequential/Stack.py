@@ -3,8 +3,6 @@
 import os
 import glob
 import gdal
-import isce
-from isceobj.Util.ImageUtil import ImageLib as IML
 
 
 vrttmpl='''
@@ -90,17 +88,17 @@ class Stack(object):
             print("*****")
             print(slc)
 
-            # create xml file if missing
-            if not os.path.isfile(slc+'.xml'):
-                cmd = 'gdal2isce_xml.py -i '+slc
-                print(cmd)
-                os.system(cmd)
+            ## create xml file if missing
+            #if not os.path.isfile(slc+'.xml'):
+            #    cmd = 'gdal2isce_xml.py -i '+slc
+            #    print(cmd)
+            #    os.system(cmd)
 
-            # fix potential filepath in xml file if dir has been moved.
-            img = IML.loadImage(slc)[0]
-            img.filename = slc
-            img.setAccessMode('READ')
-            img.renderHdr()
+            ## fix potential filepath in xml file if dir has been moved.
+            #img = IML.loadImage(slc)[0]
+            #img.filename = slc
+            #img.setAccessMode('READ')
+            #img.renderHdr()
 
             ds = gdal.Open(slc + '.vrt', gdal.GA_ReadOnly)
             width = ds.RasterXSize
