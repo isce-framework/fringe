@@ -99,3 +99,6 @@ export PYTHONPATH=$PYTHONPATH:path-to-install-folder/python
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:path-to-install-folder/lib
 ```
+If using within an Anaconda environment:
+export GDAL_DIR=base-anaconda-directory/envs/fringe/
+
