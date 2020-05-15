@@ -81,6 +81,9 @@ In the build folder
 #On Linux
 > CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
 
+# with anaconda (on Linux) 
+> CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe -DCMAKE_PREFIX_PATH=$CONDA_PREFIX
+
 #If "conda install gxx_linux-64 / clangxx_osx-64"
 > CXX=${CXX} cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
 
