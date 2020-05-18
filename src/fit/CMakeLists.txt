@@ -17,7 +17,7 @@ set(library_sources SHARED Fit.cc)
 add_library(fit SHARED ${library_sources})
 #set_target_properties(fit PROPERTIES COMPILE_FLAGS "-DARMA_EXTRA_DEBUG")
 target_link_libraries(fit ${FIT_LIBS})
-target_include_directories(fit PUBLIC ${GDAL_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${PYTHON_NUMPY_INCLUDE_DIR})
+target_include_directories(fit PUBLIC ${GDAL_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
 
 ###Final installation
 install (TARGETS fit

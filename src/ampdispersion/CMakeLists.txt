@@ -11,18 +11,6 @@ set(AMPDISPERSION_INCS  ../../include
 set(AMPDISPERSION_LIBS  ${GDAL_LIBRARIES}
                         m)
 
-##Section for C++ executable
-add_executable(ampdispersion ${AMPDISPERSION_SRCS})
-target_include_directories(ampdispersion PUBLIC  ${AMPDISPERSION_INCS})
-target_link_libraries(ampdispersion PUBLIC ${AMPDISPERSION_LIBS})
-target_link_libraries(ampdispersion PRIVATE OpenMP::OpenMP_CXX)
-
-install (TARGETS 
-        ampdispersion
-        DESTINATION ${FRINGE_BINDIR}
-        COMPONENT exec)
-
-
 ###Section for cython extension
 set_source_files_properties(
     ampdispersionlib.pyx
@@ -31,7 +19,6 @@ cython_add_module(ampdispersionlib ampdispersionlib.pyx)
 target_include_directories(ampdispersionlib PUBLIC ${AMPDISPERSION_INCS} .)
 target_link_libraries(ampdispersionlib PUBLIC ${AMPDISPERSION_LIBS})
 target_link_libraries(ampdispersionlib PRIVATE OpenMP::OpenMP_CXX)
-
 
 ###Final installation
 install (TARGETS

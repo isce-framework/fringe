@@ -10,18 +10,6 @@ set(CALAMP_INCS ../../include
 ###List of libraries
 set(CALAMP_LIBS ${GDAL_LIBRARIES})
 
-##Section for C++ executable
-add_executable(calamp ${CALAMP_SRCS})
-target_include_directories(calamp PUBLIC  ${CALAMP_INCS})
-target_link_libraries(calamp PUBLIC ${CALAMP_LIBS})
-target_link_libraries(calamp PRIVATE OpenMP::OpenMP_CXX)
-
-install (TARGETS 
-        calamp
-        DESTINATION ${FRINGE_BINDIR}
-        COMPONENT exec)
-
-
 ###Section for cython extension
 set_source_files_properties(
     calamplib.pyx
