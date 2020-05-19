@@ -13,18 +13,6 @@ set(EVD_LIBS    ${ARMADILLO_LIBRARIES}
                 ${LAPACK_LIBRARIES}
                 m)
 
-##Section for C++ Executable
-add_executable(evd ${EVD_SRCS})
-target_include_directories(evd PUBLIC  ${EVD_INCS})
-target_link_libraries(evd PUBLIC ${EVD_LIBS})
-target_link_libraries(evd PRIVATE OpenMP::OpenMP_CXX)
-
-install (TARGETS 
-        evd
-        DESTINATION ${fringe_BINDIR}
-        COMPONENT exec)
-
-
 ###Section for cython extension
 set_source_files_properties(
     evdlib.pyx

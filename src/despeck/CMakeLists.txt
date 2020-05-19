@@ -14,18 +14,6 @@ set(DESPECK_LIBS    ${ARMADILLO_LIBRARIES}
                     ${GDAL_LIBRARIES}
                     m)
 
-###Section for C++ executable
-add_executable(despeck ${DESPECK_SRCS})
-target_include_directories(despeck PUBLIC ${DESPECK_INCS})
-target_link_libraries(despeck PUBLIC ${DESPECK_LIBS})
-target_link_libraries(despeck PRIVATE OpenMP::OpenMP_CXX)
-
-
-install (TARGETS 
-        despeck
-        DESTINATION ${FRINGE_BINDIR}
-        COMPONENT exec)
-
 ###Section for installing cython extension
 set_source_files_properties(
     despecklib.pyx

@@ -1,0 +1,9 @@
+cmake                                                                    
+python>=3.7
+cython
+gdal
+libgdal
+numpy
+armadillo
+gcc_linux-64
+gxx_linux-64

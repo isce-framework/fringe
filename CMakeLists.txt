@@ -13,8 +13,6 @@ if (POLICY CMP0048)
 endif (POLICY CMP0048)
 
 
-option(WITH_CUDA "Set ON|OFF (default=ON) to build CUDA library" OFF)
-
 ###Project
 project( FRINGE
          VERSION 0.1
@@ -41,13 +39,11 @@ find_package(OpenMP COMPONENTS CXX)
 FIND_PACKAGE(LAPACK REQUIRED)
 
 ###Find python3
-FIND_PACKAGE(Python 3.6 COMPONENTS Interpreter Development )
+FIND_PACKAGE(Python 3.7 COMPONENTS Interpreter Development NumPy)
 include(useCython)
 
 ###Include FRINGE specific paths
 include (ConfigProject)
-
-FIND_PACKAGE(Numpy REQUIRED)
 
 ####!!!!-- End of checking prerequisites --!!!!
 
