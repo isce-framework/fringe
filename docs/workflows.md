@@ -64,6 +64,8 @@ For PS pixels we extract the wrapped phase series of the SLCs through time and i
 integratePS.py -s coreg_stack/slcs_base.vrt -d adjusted_wrapped_DS/ -t Sequential/Datum_connection/EVD/tcorr.bin -p ampDispersion/ps_pixels -o PS_DS --unwrap_method snaphu
 ```
 
+**Note**: The above example shows the usage of temporal coherence estimate from the EVD analysis of compressed SLCs corresponding to each ministack. We encourage users to visualize this w.r.t the individual temporal coherence estimates for each ministack under Sequential/miniStacks/*_*/EVD/tcorr.bin. We often average these individual tcorr files and use that instead as they represent signal properties better. 
+
 ## Phase 2: Wrapped time-series to deformation time-series
 -----------
 
