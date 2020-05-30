@@ -24,8 +24,12 @@ def cmdLineParser():
             default=5, help='Half window size (range)')
     parser.add_argument('-y', '--yhalf', type=int, dest='halfWindowY',
             default=5, help='Half window size (azimuth)')
-    parser.add_argument('-m', '--minneigh', type=int, dest='minNeighbors',
+    parser.add_argument('-n', '--minneigh', type=int, dest='minNeighbors',
             default=5, help='Minimum number of neighbors for computation')
+    parser.add_argument('-m', '--method', type=str, dest='method',
+            default='MLE', help='Decomposition method to use - MLE / EVD / SBAS')
+    parser.add_argument('-b', '--bandwidth', type=int, dest='bandWidth',
+            default=-1, help='Diagonal bandwidth for SBAS')
 
     return parser.parse_args()
 
@@ -54,6 +58,11 @@ def runEvd(inps):
     aa.halfWindowX = inps.halfWindowX
     aa.halfWindowY = inps.halfWindowY
     aa.minimumNeighbors = inps.minNeighbors
+    
+    ##Set up method and bandwidth
+    aa.method = inps.method
+    aa.bandWidth = inps.bandWidth
+
     aa.run()
 
 
