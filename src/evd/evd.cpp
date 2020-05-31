@@ -506,6 +506,8 @@ int evd_process(evdOptions *opts)
         //Copy method to constant string
         const std::string method = opts->method;
         const int BW = opts->bandWidth;
+        const bool isstbas = (method.compare("STBAS") == 0);
+        const bool ismle = (method.compare("MLE") == 0);
 
     #pragma omp parallel for\
         default(shared)
@@ -579,7 +581,7 @@ int evd_process(evdOptions *opts)
                 Covar.at(ti,ti,threadnum) = std::complex<double>(1.0, 0.0);
             }
 
-            if (method.compare("MLE") == 0)
+            if (ismle)
             {
                 //Store absolute value in Amp1
                 for (int ti=0; ti<nbands; ti++)
@@ -587,10 +589,10 @@ int evd_process(evdOptions *opts)
                     for(int tj=ti+1; tj<nbands; tj++)
                     {
                         double coh = std::abs( Covar.at(ti,tj,threadnum));
-                        Amp1.at(ti,tj,threadnum) = coh;
-                        Amp1.at(tj,ti,threadnum) = coh;
+                        Amp1.at(ti,tj,threadnum) = std::complex<double>(coh, 0.0);
+                        Amp1.at(tj,ti,threadnum) = std::complex<double>(coh, 0.0);
                     }
-                    Amp1.at(ti,ti,threadnum) = 1.0;
+                    Amp1.at(ti,ti,threadnum) = std::complex<double>(1.0, 0.0);
                 }
 
                 bool valid = true;
@@ -690,9 +692,8 @@ int evd_process(evdOptions *opts)
                 //Largest eigen vector of the correlation matrix
                
                 //If STBAS, apply bandwidth limits
-                if (method.compare("STBAS")==0)
+                if (isstbas)
                 {
-                    
                     //Blank out covariance entries outside the bandwidth
                     for (int ti=0; ti <nbands; ti++)
                     {
@@ -767,12 +768,12 @@ int evd_process(evdOptions *opts)
             //Temporal coherence estimation
             //This is common to all methods
             {
-                std::complex<double> tempcorr = 0.0;
+                std::complex<double> tempcorr(0.0,0.0);
                 std::complex<double> cJ(0.0,1.0);
                 int counter = 0;
                 for(int ti=0; ti<nbands; ti++)
                 {
-                    int ulim = (method.compare("STBAS") == 0)? (ti+BW+1) : nbands;
+                    int ulim = isstbas ? (ti+BW+1) : nbands;
                     for(int tj=ti+1; tj<ulim; tj++)
                     {
                         int ind = ti + nbands * tj;
