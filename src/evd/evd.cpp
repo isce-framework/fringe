@@ -71,17 +71,18 @@ int evd_process(evdOptions *opts)
 
 
     //Resolve method and bandwidth
-    if (opts->method.compare("SBAS") == 0)
+    if (opts->method.compare("STBAS") == 0)
     {
         //If bandwidth is not provided
         if (opts->bandWidth <= 0)
         {
-            opts->method = "EVD";
-            std::cout << "Since SBAS bandwidth was not provided - using EVD or full bandwidth \n";
+            std::cout << "Requested STBAS but no bandwidth provided \n";
+            GDALDestroyDriverManager();
+            return 101;
         }
         else if (opts->bandWidth >= (nbands-1))
         {
-            std::cout <<"Requested SBAS bandwidth " 
+            std::cout <<"Requested STBAS bandwidth " 
                       << opts->bandWidth << " is larger than full bandwidth " 
                       << (nbands-1) << "\n";
             GDALDestroyDriverManager();
@@ -575,7 +576,7 @@ int evd_process(evdOptions *opts)
                     Covar.at(ti,tj,threadnum) = res;
                     Covar.at(tj,ti,threadnum) = std::conj(res);
                 }
-                Covar.at(ti,ti,threadnum) = 1.0;
+                Covar.at(ti,ti,threadnum) = std::complex<double>(1.0, 0.0);
             }
 
             if (method.compare("MLE") == 0)
@@ -685,11 +686,11 @@ int evd_process(evdOptions *opts)
             } //End of MLE
             else
             {
-                //This is for SBAS / EVD - which both use the same concept
+                //This is for STBAS / EVD - which both use the same concept
                 //Largest eigen vector of the correlation matrix
                
-                //If SBAS, apply bandwidth limits
-                if (method.compare("SBAS")==0)
+                //If STBAS, apply bandwidth limits
+                if (method.compare("STBAS")==0)
                 {
                     
                     //Blank out covariance entries outside the bandwidth
@@ -697,8 +698,8 @@ int evd_process(evdOptions *opts)
                     {
                         for(int tj=ti+BW+1; tj< nbands; tj++)
                         {
-                            Covar.at(tj,ti,threadnum) = 0.;
-                            Covar.at(ti,tj,threadnum) = 0.;
+                            Covar.at(tj,ti,threadnum) = std::complex<double>(0., 0.);
+                            Covar.at(ti,tj,threadnum) = std::complex<double>(0., 0.);
                         }
                     }
                 }
@@ -727,7 +728,7 @@ int evd_process(evdOptions *opts)
                 }
                 if (!valid) continue;   //Skip updating evddata
            
-            } //End of EVD or SBAS
+            } //End of EVD or STBAS
 
 
             //If we have gotten this far, "eigvec" should contain the solution
@@ -743,7 +744,7 @@ int evd_process(evdOptions *opts)
                 }
 
                 //Ensure that the reference index is exactly 1 - i.e, phase 0
-                evddata.at(pp, miniStackCount-1) = 1.0;
+                evddata.at(pp, miniStackCount-1) = std::complex<float>(1.0, 0.0);
             }
 
 
@@ -771,7 +772,7 @@ int evd_process(evdOptions *opts)
                 int counter = 0;
                 for(int ti=0; ti<nbands; ti++)
                 {
-                    int ulim = (method.compare("SBAS") == 0)? (ti+BW+1) : nbands;
+                    int ulim = (method.compare("STBAS") == 0)? (ti+BW+1) : nbands;
                     for(int tj=ti+1; tj<ulim; tj++)
                     {
                         int ind = ti + nbands * tj;

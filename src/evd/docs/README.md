@@ -20,8 +20,8 @@ For full details on the processing approach, see references.
     - The Hadamard product of the inverse and Covariance matrix is used for further analysis
 
 
-2. (EVD/ SBAS) In case of SBAS, the bandwidth parameter is used to constrain the Covariance matrix and all entries outside the bands are zeroed out. 
-    - The largest eigen vector of the full covariance (EVD) / banded covariance (SBAS) matrix is estimated
+2. (EVD/ STBAS) In case of STBAS, the bandwidth parameter is used to constrain the Covariance matrix and all entries outside the bands are zeroed out. 
+    - The largest eigen vector of the full covariance (EVD) / banded covariance (STBAS) matrix is estimated
     - This is nothing but maximization of Rayleigh quotient in Quadratic/Semi-definite programming. Only the phase of the eigen vector is considered similar to MLE.
 
 
@@ -104,10 +104,10 @@ optional arguments:
                         for computation (default: 5)
   -m METHOD, --method METHOD
                         Decomposition method to use -
-                        MLE / EVD / SBAS (default:
+                        MLE / EVD / STBAS (default:
                         MLE)
   -b BANDWIDTH, --bandwidth BANDWIDTH
-                        Diagonal bandwidth for SBAS
+                        Diagonal bandwidth for STBAS
                         (default: -1)
 
 ```

@@ -27,9 +27,9 @@ def cmdLineParser():
     parser.add_argument('-n', '--minneigh', type=int, dest='minNeighbors',
             default=5, help='Minimum number of neighbors for computation')
     parser.add_argument('-m', '--method', type=str, dest='method',
-            default='MLE', help='Decomposition method to use - MLE / EVD / SBAS')
+            default='MLE', help='Decomposition method to use - MLE / EVD / STBAS')
     parser.add_argument('-b', '--bandwidth', type=int, dest='bandWidth',
-            default=-1, help='Diagonal bandwidth for SBAS')
+            default=-1, help='Diagonal bandwidth for STBAS')
 
     return parser.parse_args()
 
