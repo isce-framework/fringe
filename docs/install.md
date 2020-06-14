@@ -76,7 +76,7 @@ In the build folder
 > cd build
 
 #On OSX
-> CXX=clang++ cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
+> CXX=clang++ cmake -DCMAKE_FIND_FRAMEWORK=NEVER -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
 
 #On Linux
 > CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
