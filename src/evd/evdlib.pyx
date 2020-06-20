@@ -11,13 +11,12 @@ cdef extern from "evd.hpp":
         string outputCompressedSlcFolder
         string compSlc
         string coherence
-        
-        
+
         int blocksize
         int memsize
 
         double prob
-        
+
         int Nx
         int Ny
         int minNeighbors
@@ -140,7 +139,7 @@ cdef class Evd:
 
     @method.setter
     def method(self, x):
-        self.this.ptr.method = x.encode('utf-8')
+        self.thisptr.method = x.encode('utf-8')
 
     @property
     def bandWidth(self):
