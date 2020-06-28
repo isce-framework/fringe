@@ -11,17 +11,20 @@ cdef extern from "evd.hpp":
         string outputCompressedSlcFolder
         string compSlc
         string coherence
-        
-        
+
         int blocksize
         int memsize
 
         double prob
-        
+
         int Nx
         int Ny
         int minNeighbors
-        int miniStackCount 
+
+        string method 
+
+        int miniStackCount
+        int bandWidth
 
 cdef extern from "evd.cpp":
     int evd_process(evdOptions*) nogil
@@ -130,6 +133,21 @@ cdef class Evd:
     def halfWindowY(self,x):
         self.thisptr.Ny = x
 
+    @property
+    def method(self):
+        return self.thisptr.method.decode('utf-8')
+
+    @method.setter
+    def method(self, x):
+        self.thisptr.method = x.encode('utf-8')
+
+    @property
+    def bandWidth(self):
+        return self.thisptr.bandWidth
+
+    @bandWidth.setter
+    def bandWidth(self,x):
+        self.thisptr.bandWidth = x
 
     def print(self):
         self.thisptr.print()

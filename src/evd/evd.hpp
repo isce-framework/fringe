@@ -29,16 +29,24 @@ struct evdOptions
     std::string coherence;          //Coherence of the EVD description
     std::string compSLC;            //Compressed SLC
 
+    //Memory and blocking options
     int blocksize;           //Block size in rows
     int memsize;             //Memory in MB that can be used by the program
-//    std::vector<int> ignorebands; //Bands to ignore for computing dispersion
 
+    //Neighborhood options
     int Nx;   //Half window size in pixels
     int Ny;   //Hald window size in lines
     int minNeighbors; //Minimum number of neighbors
 
+    //Choice of method - MLE / EVD/ STBAS
+    std::string method;
+
+    //Sequential options
     int miniStackCount; //A counter for miniStack, used when Sequential algorithm is used. For one single stack of all acquisitions, miniStackCount = 1
 
+    //STBAS options
+    int bandWidth; //Bandwidth for STBAS
+    
     //Functions
     evdOptions();        //Default constructor 
     int initFromCmdLine(int, const char**); //Command line parser
@@ -55,6 +63,8 @@ evdOptions::evdOptions()
     Ny = 5;
     minNeighbors = 2;
     miniStackCount = 1;
+    method = "MLE";
+    bandWidth = -1;
 }
 
 
@@ -75,6 +85,8 @@ int evdOptions::initFromCmdLine(int argc, const char **argv)
     args::ValueFlag<int> yy(parser, "ysize", "Half window in y", {'y'});
     args::ValueFlag<int> mm(parser, "minNeighbors", "Minimum number of neighbors", {'n'});
     args::ValueFlag<int> kk(parser, "miniStackCount", "Mini-stack count", {'k'});
+    args::ValueFlag<std::string> tmethod(parser, "method", "Decomposition method - MLE / EVD/ STBAS", {'m'});
+    args::ValueFlag<int> bw(parser, "bandWidth", "STBAS bandwidth", {'b'});
     try
     {
         parser.ParseCLI(argc, argv);
@@ -113,6 +125,7 @@ int evdOptions::initFromCmdLine(int argc, const char **argv)
     if (mems) {memsize = args::get(mems);}
     if (mm) {minNeighbors = args::get(mm);}
     if (kk) {miniStackCount = args::get(kk);}
+    if (bw) {bandWidth = args::get(bw);}
     if (compfolder) {
        outputCompressedSlcFolder = args::get(compfolder);
        if (compname) {
@@ -126,6 +139,23 @@ int evdOptions::initFromCmdLine(int argc, const char **argv)
        outputCompressedSlcFolder = args::get(outfolder);
        compSLC = "compslc.bin";
     }
+
+    if (tmethod)
+    {
+        std::string inmethod = args::get(tmethod);
+        if ( (inmethod.compare("MLE")==0) || (inmethod.compare("EVD")==0) || (inmethod.compare("STBAS")==0))
+        {
+            method = inmethod;
+        }
+        else
+        {
+            std::cout << "Input method must be MLE or EVD or STBAS \n";
+            std::cerr << parser;
+            return 1;
+        }
+    }
+
+
 
     return 0;
 }
@@ -146,5 +176,11 @@ void evdOptions::print()
     std::cout << "Blocksize: " << blocksize << " lines \n";
     std::cout << "Minimum neighbors: " << minNeighbors << "\n";
     std::cout << "Mini-stack counter: " << miniStackCount << "\n";
+
+    std::cout << "Decomposition method: " << method <<"\n";
+    if (method.compare("STBAS") == 0)
+    {
+        std::cout << "STBAS Bandwidth: " << bandWidth << "\n";
+    }
 }   
 #endif //FRINGE_EVD_H

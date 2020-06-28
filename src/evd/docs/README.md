@@ -14,12 +14,19 @@ For full details on the processing approach, see references.
 
 1. For each pixel, a Covariance matrix in time is estimated using the local neighorhood.
 
-2. The Covariance matrix is then used with the MLE Estimator to estimate a wrapped phase for each time-epoch in 3 steps
+2. (MLE) The Covariance matrix is then used with the MLE Estimator to estimate a wrapped phase for each time-epoch in 3 steps
     - Coherence maxtrix is estimated as element-by-element absolute value of covariance matrix
     - The inverse of the coherence matrix is estimated
     - The Hadamard product of the inverse and Covariance matrix is used for further analysis
 
-3. We have not yet implemented iterative improvements to the phase-linking algorithm. For now, we use the phase of the Eigen vector corresponding to the smallest Eigen value as the MLE estimate. Simple tests with Python show that the iterative improvements are fairly minor in most cases.
+
+2. (EVD/ STBAS) In case of STBAS, the bandwidth parameter is used to constrain the Covariance matrix and all entries outside the bands are zeroed out. 
+    - The largest eigen vector of the full covariance (EVD) / banded covariance (STBAS) matrix is estimated
+    - This is nothing but maximization of Rayleigh quotient in Quadratic/Semi-definite programming. Only the phase of the eigen vector is considered similar to MLE.
+
+
+3. We have not yet implemented iterative improvements to the phase-linking algorithm. For now, we use the phase of the Eigen vector of the final decompositio. Simple tests with Python show that the iterative improvements are fairly minor (almost none) in most cases.
+
 
 4. These MLE phase estimates are written out as individual layers. The other related measures like the temporal coherence and compressed SLC are also estimated on a pixel-by-pixel basis and written out.
 
@@ -62,6 +69,7 @@ For full details on the processing approach, see references.
 
 6. Y. Wang and X. X. Zhu, “Robust Estimators for Multipass SAR Interferometry,” IEEE Trans. Geosci. Remote Sens., vol. 54, no. 2, pp. 968–980, Feb. 2016.
 
+7. Ansari, Homa; De Zan, Francesco; Parizzi, Alessandro (2020): Study of Systematic Bias in Measuring Surface Deformation with SAR Interferometry. TechRxiv. Preprint. https://doi.org/10.36227/techrxiv.11672532.v1.
 
 ## evd.py 
 
@@ -91,41 +99,19 @@ optional arguments:
                         Half window size (range) (default: 5)
   -y HALFWINDOWY, --yhalf HALFWINDOWY
                         Half window size (azimuth) (default: 5)
-  -m MINNEIGHBORS, --minneigh MINNEIGHBORS
-                        Minimum number of neighbors for computation (default:
-                        5)
-```
-
-
-
-## evd
-
-C++ based executable. Not much error checking of inputs.
-
-```
-  evd {OPTIONS}
-
-    Eigen value decomposition of a stack of SLCs
-
-  OPTIONS:
-
-      -h, --help                        Display this help menu
-      -i[inputDS*]                      Input Stack VRT
-      -w[wtsDS*]                        Input neighbor mask
-      -o[output*]                       Output folder for new stack
-      -l[linesperblock]                 Lines per block for processing
-      -r[memorysize]                    Memory in Mb
-      -x[xsize]                         Half window in x
-      -y[ysize]                         Half window in y
-      -n[minNeighbors]                  Minimum number of neighbors
-```
-
-
-Note that I often have to call the executable as shown below on conda-based environments:
+  -n MINNEIGHBORS, --minneigh MINNEIGHBORS
+                        Minimum number of neighbors
+                        for computation (default: 5)
+  -m METHOD, --method METHOD
+                        Decomposition method to use -
+                        MLE / EVD / STBAS (default:
+                        MLE)
+  -b BANDWIDTH, --bandwidth BANDWIDTH
+                        Diagonal bandwidth for STBAS
+                        (default: -1)
 
 ```
-> OPENBLAS_NUM_THREADS=1 LD_LIBRARY_PATH=$LD_RUN_PATH evd
-```
+
 
 ### evdtest.py
 
