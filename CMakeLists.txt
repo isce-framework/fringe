@@ -30,7 +30,7 @@ set(CMAKE_CXX_STANDARD 11)
 FIND_PACKAGE(GDAL 3.0 REQUIRED)
 
 ###Find Armadillo
-FIND_PACKAGE(Armadillo REQUIRED)
+FIND_PACKAGE(Armadillo 8.100 REQUIRED)
 
 ###Find openmp
 find_package(OpenMP COMPONENTS CXX)
