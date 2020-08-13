@@ -2,7 +2,7 @@
 
 import os
 import glob
-import gdal
+from osgeo import gdal
 
 
 vrttmpl='''

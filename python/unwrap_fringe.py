@@ -4,7 +4,7 @@
 
 import os
 import argparse
-import gdal
+from osgeo import gdal
 import isce
 import isceobj
 
@@ -80,6 +80,8 @@ def unwrap_snaphu(inps, length, width):
     snp.unwrap()
 
     write_xml(inps.unwrapFile, width, length, 2 , "FLOAT", "BIL")
+    write_xml(inps.unwrapFile+'.conncomp', width, length, 1, "BYTE", "BIP")
+
 
 def write_xml(fileName,width,length,bands,dataType,scheme):
 
