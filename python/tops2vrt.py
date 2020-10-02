@@ -174,8 +174,8 @@ if __name__ == '__main__':
         print('creating stack directory: {0}'.format(inps.stackdir))
         os.makedirs(inps.stackdir)    
 
-    latFile = os.path.join(inps.indir, "geom_master", "lat.rdr.full.vrt")
-    lonFile = os.path.join(inps.indir, "geom_master", "lon.rdr.full.vrt")
+    latFile = os.path.join(inps.indir, "geom_reference", "lat.rdr.full.vrt")
+    lonFile = os.path.join(inps.indir, "geom_reference", "lon.rdr.full.vrt")
 
     # setting up a subset of the stack
     if inps.geobbox:
@@ -253,7 +253,7 @@ if __name__ == '__main__':
                                        xmin = xmin, ymin = ymin,
                                        width = width,
                                        height = height,
-                                       PATH = os.path.abspath( os.path.join(inps.indir, 'geom_master', val+'.rdr.full.vrt')),
+                                       PATH = os.path.abspath( os.path.join(inps.indir, 'geom_reference', val+'.rdr.full.vrt')),
                                        linewidth = width * 8))
 
 
