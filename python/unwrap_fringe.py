@@ -3,6 +3,7 @@
 # Author: Heresh Fattahi
 
 import os
+import time
 import argparse
 from osgeo import gdal
 import isce
@@ -26,7 +27,7 @@ def cmdLineParser():
 
     parser.add_argument('-m', '--method', type=str, dest='method',
             default='snaphu', help='unwrapping method: default = snaphu')
-    
+
     parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
             required=False, help='path of reference xml file for unwrapping with snaphu')
 
@@ -52,10 +53,10 @@ def unwrap_phass(inps, length, width):
     phass.unwrap()
 
     write_xml(phass.outputFile, width, length, 1 , "FLOAT", "BIL")
-    
+
 #Adapted code from unwrap.py and s1a_isce_utils.py in topsStack
 def extractInfo(inps):
-    
+
     '''
     Extract required information from pickle file.
     '''
@@ -104,7 +105,7 @@ def extractInfo(inps):
 
 def unwrap_snaphu(inps, length, width, metadata):
     from contrib.Snaphu.Snaphu import Snaphu
-    
+
     if metadata is None:
         altitude = 800000.0
         earthRadius = 6371000.0
@@ -166,6 +167,8 @@ if __name__ == '__main__':
     '''
     Main driver.
     '''
+    start_time = time.time()
+
     #*************************************************************#
     # read the input options and unwrap
     inps = cmdLineParser()
@@ -185,3 +188,6 @@ if __name__ == '__main__':
 
     elif inps.method == "phass":
         unwrap_phass(inps, length, width)
+
+    m, s = divmod(time.time()-start_time, 60)
+    print('time used: {:02.0f} mins {:02.1f} secs.\n'.format(m, s))

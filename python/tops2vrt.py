@@ -76,11 +76,11 @@ def getLinePixelBbox(geobbox, latFile, lonFile):
     se = lonlat2pixeline(lonFile, latFile, east, south)
     nw = lonlat2pixeline(lonFile, latFile, west, north)
 
-    ymin = np.int(np.round(np.min([se[1], nw[1]])))
-    ymax = np.int(np.round(np.max([se[1], nw[1]])))
+    ymin = np.int16(np.round(np.min([se[1], nw[1]])))
+    ymax = np.int16(np.round(np.max([se[1], nw[1]])))
 
-    xmin = np.int(np.round(np.min([se[0], nw[0]])))
-    xmax = np.int(np.round(np.max([se[0], nw[0]])))
+    xmin = np.int16(np.round(np.min([se[0], nw[0]])))
+    xmax = np.int16(np.round(np.max([se[0], nw[0]])))
 
     print("x min-max: ", xmin, xmax)
     print("y min-max: ", ymin, ymax)
