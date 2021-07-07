@@ -28,7 +28,7 @@ find_package(Python 3.6)
 if(Python_Interpreter_FOUND)
   get_filename_component( _python_path ${Python_EXECUTABLE} PATH )
   find_program( CYTHON_EXECUTABLE
-      NAMES cython${Python_VERSION_MAJOR} cython-${Python_VERSION_MAJOR}.${Python_VERSION_MINOR} cython cython.bat
+    NAMES cython cython.bat cython${Python_VERSION_MAJOR} cython-${Python_VERSION_MAJOR}.${Python_VERSION_MINOR} cython3 
     HINTS ${_python_path}
     )
 else()
@@ -37,7 +37,8 @@ else()
     )
 endif()
 
-
+message( "The Python path is ${_python_path}")
+message( "The Cython Executable is ${CYTHON_EXECUTABLE}")
 include( FindPackageHandleStandardArgs )
 FIND_PACKAGE_HANDLE_STANDARD_ARGS( Cython REQUIRED_VARS CYTHON_EXECUTABLE )
 
