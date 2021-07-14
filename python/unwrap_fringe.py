@@ -49,6 +49,75 @@ def unwrap_phass(inps, length, width):
     phass.unwrap()
 
     write_xml(phass.outputFile, width, length, 1 , "FLOAT", "BIL")
+    
+#Adapted code from unwrap.py in topsStack
+def extractInfo(xmlName, inps):
+    
+    '''
+    Extract required information from pickle file.
+    '''
+    from isceobj.Planet.Planet import Planet
+    from isceobj.Util.geo.ellipsoid import Ellipsoid
+
+   # with open(pckfile, 'rb') as f:
+   #    frame = pickle.load(f)
+
+    #with shelve.open(pckfile,flag='r') as db:
+    #    frame = db['swath']
+
+    frame = ut.loadProduct(xmlName)
+
+    burst = frame.bursts[0]
+    planet = Planet(pname='Earth')
+    elp = Ellipsoid(planet.ellipsoid.a, planet.ellipsoid.e2, 'WGS84')
+
+    data = {}
+    data['wavelength'] = burst.radarWavelength
+
+    tstart = frame.bursts[0].sensingStart
+    tend   = frame.bursts[-1].sensingStop
+    #tmid = tstart + 0.5*(tend - tstart)
+    tmid = tstart
+
+
+    orbit = burst.orbit
+    peg = orbit.interpolateOrbit(tmid, method='hermite')
+
+    refElp = Planet(pname='Earth').ellipsoid
+    llh = refElp.xyz_to_llh(peg.getPosition())
+    hdg = orbit.getENUHeading(tmid)
+    refElp.setSCH(llh[0], llh[1], hdg)
+
+    earthRadius = refElp.pegRadCur
+
+    altitude   = llh[2]
+
+
+    #sv = burst.orbit.interpolateOrbit(tmid, method='hermite')
+    #pos = sv.getPosition()
+    #llh = elp.ECEF(pos[0], pos[1], pos[2]).llh()
+
+    data['altitude'] = altitude  #llh.hgt
+
+    #hdg = burst.orbit.getHeading()
+    data['earthRadius'] = earthRadius  #elp.local_radius_of_curvature(llh.lat, hdg)
+    
+    #azspacing  = burst.azimuthTimeInterval * sv.getScalarVelocity()
+    #azres = 20.0 
+
+    #corrfile  = os.path.join(self._insar.mergedDirname, self._insar.coherenceFilename)
+    rangeLooks = inps.rglooks
+    azimuthLooks = inps.azlooks
+    azfact = 0.8
+    rngfact = 0.8
+
+    corrLooks = rangeLooks * azimuthLooks/(azfact*rngfact)
+
+    data['corrlooks'] = corrLooks  #inps.rglooks * inps.azlooks * azspacing / azres
+    data['rglooks'] = inps.rglooks
+    data['azlooks'] = inps.azlooks
+
+    return data
 
 def unwrap_snaphu(inps, length, width):
     import isce
