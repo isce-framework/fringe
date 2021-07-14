@@ -104,22 +104,6 @@ def extractInfo(inps):
 
     #hdg = burst.orbit.getHeading()
     data['earthRadius'] = earthRadius  #elp.local_radius_of_curvature(llh.lat, hdg)
-    
-    #azspacing  = burst.azimuthTimeInterval * sv.getScalarVelocity()
-    #azres = 20.0 
-
-    #corrfile  = os.path.join(self._insar.mergedDirname, self._insar.coherenceFilename)
-    rangeLooks = inps.rglooks
-    azimuthLooks = inps.azlooks
-    azfact = 0.8
-    rngfact = 0.8
-
-    corrLooks = rangeLooks * azimuthLooks/(azfact*rngfact)
-
-    data['corrlooks'] = corrLooks  #inps.rglooks * inps.azlooks * azspacing / azres
-    data['rglooks'] = inps.rglooks
-    data['azlooks'] = inps.azlooks
-
     return data
 
 def unwrap_snaphu(inps, length, width, metadata=metadata):
