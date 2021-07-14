@@ -26,6 +26,9 @@ def cmdLineParser():
 
     parser.add_argument('-m', '--method', type=str, dest='method',
             default='snaphu', help='unwrapping method: default = snaphu')
+    
+    parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
+            required=False, help='path of reference xml file for unwrapping with snaphu')
 
     return parser.parse_args()
 
@@ -51,7 +54,7 @@ def unwrap_phass(inps, length, width):
     write_xml(phass.outputFile, width, length, 1 , "FLOAT", "BIL")
     
 #Adapted code from unwrap.py in topsStack
-def extractInfo(xmlName, inps):
+def extractInfo(inps):
     
     '''
     Extract required information from pickle file.
@@ -65,7 +68,7 @@ def extractInfo(xmlName, inps):
     #with shelve.open(pckfile,flag='r') as db:
     #    frame = db['swath']
 
-    frame = ut.loadProduct(xmlName)
+    frame = ut.loadProduct(inps.xmlFile)
 
     burst = frame.bursts[0]
     planet = Planet(pname='Earth')
@@ -119,14 +122,19 @@ def extractInfo(xmlName, inps):
 
     return data
 
-def unwrap_snaphu(inps, length, width):
+def unwrap_snaphu(inps, length, width, metadata=metadata):
     import isce
     import isceobj
     from contrib.Snaphu.Snaphu import Snaphu
-   
-    altitude = 800000.0
-    earthRadius = 6371000.0
-    wavelength = 0.056
+    
+    if metadata == {}:
+        altitude = 800000.0
+        earthRadius = 6371000.0
+        wavelength = 0.056
+    else:
+        altitude = metadata['altitude']
+        earthRadius = metadata['earthRadius']
+        wavelength = metadata['wavelength']
 
     snp = Snaphu()
     snp.setInitOnly(False)
@@ -191,7 +199,8 @@ if __name__ == '__main__':
         os.makedirs(unwrapDir)
 
     if inps.method == "snaphu":
-        unwrap_snaphu(inps, length, width)
+        metadata = extractInfo(inps)
+        unwrap_snaphu(inps, length, width, metadata)
 
     elif inps.method == "phass":
         unwrap_phass(inps, length, width)
