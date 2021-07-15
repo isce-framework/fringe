@@ -107,8 +107,6 @@ def extractInfo(inps):
     return data
 
 def unwrap_snaphu(inps, length, width, metadata=metadata):
-    import isce
-    import isceobj
     from contrib.Snaphu.Snaphu import Snaphu
     
     if metadata == {}:
