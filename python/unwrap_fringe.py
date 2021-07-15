@@ -64,7 +64,7 @@ def extractInfo(inps):
     from iscesys.Component.ProductManager import ProductManager as PM
 
     pm = PM()
-    pm.configure
+    #pm.configure
     frame = pm.loadProduct(inps.xmlFile)
 
     burst = frame.bursts[0]
@@ -75,7 +75,7 @@ def extractInfo(inps):
     data['wavelength'] = burst.radarWavelength
 
     tstart = frame.bursts[0].sensingStart
-    tend   = frame.bursts[-1].sensingStop
+    #tend   = frame.bursts[-1].sensingStop
     #tmid = tstart + 0.5*(tend - tstart)
     tmid = tstart
 
