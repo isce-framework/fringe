@@ -53,7 +53,7 @@ def unwrap_phass(inps, length, width):
 
     write_xml(phass.outputFile, width, length, 1 , "FLOAT", "BIL")
     
-#Adapted code from unwrap.py in topsStack
+#Adapted code from unwrap.py and s1a_isce_utils.py in topsStack
 def extractInfo(inps):
     
     '''
@@ -61,14 +61,11 @@ def extractInfo(inps):
     '''
     from isceobj.Planet.Planet import Planet
     from isceobj.Util.geo.ellipsoid import Ellipsoid
+    from iscesys.Component.ProductManager import ProductManager as PM
 
-   # with open(pckfile, 'rb') as f:
-   #    frame = pickle.load(f)
-
-    #with shelve.open(pckfile,flag='r') as db:
-    #    frame = db['swath']
-
-    frame = ut.loadProduct(inps.xmlFile)
+    pm = PM()
+    pm.configure
+    frame = pm.loadProduct(inps.xmlFile)
 
     burst = frame.bursts[0]
     planet = Planet(pname='Earth')
@@ -95,7 +92,6 @@ def extractInfo(inps):
 
     altitude   = llh[2]
 
-
     #sv = burst.orbit.interpolateOrbit(tmid, method='hermite')
     #pos = sv.getPosition()
     #llh = elp.ECEF(pos[0], pos[1], pos[2]).llh()
@@ -106,10 +102,10 @@ def extractInfo(inps):
     data['earthRadius'] = earthRadius  #elp.local_radius_of_curvature(llh.lat, hdg)
     return data
 
-def unwrap_snaphu(inps, length, width, metadata=metadata):
+def unwrap_snaphu(inps, length, width, metadata):
     from contrib.Snaphu.Snaphu import Snaphu
     
-    if metadata == {}:
+    if metadata is None:
         altitude = 800000.0
         earthRadius = 6371000.0
         wavelength = 0.056
@@ -181,9 +177,9 @@ if __name__ == '__main__':
         os.makedirs(unwrapDir)
 
     if inps.method == "snaphu":
-        metadata = extractInfo(inps)
+        if inps.xmlFile is not None:
+            metadata = extractInfo(inps)
         unwrap_snaphu(inps, length, width, metadata)
 
     elif inps.method == "phass":
         unwrap_phass(inps, length, width)
-
