@@ -44,7 +44,7 @@ def cmdLineParser(iargs = None):
 
     parser.add_argument('-u', '--unw_method', '--unwrap_method', type=str, dest='unwrapMethod', choices=('snaphu','phass'),
             help='phase unwrapping method. e.g., snaphu, phass. If enabled, a shell file "run_unwrap_ps_ds.sh" with unwrap command will be created.')
-    
+
     parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
             required=False, help='path of reference xml file for unwrapping with snaphu')
 
