@@ -178,8 +178,12 @@ if __name__ == '__main__':
         print("coherence: ", coh) 
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
-        runf.write(cmd + "\n") 
+        if inps.xmlFile is None:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output
+            runf.write(cmd + "\n")
+        else:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
+            runf.write(cmd + "\n") 
 
     for k in datumDict.keys():
         print(k)
@@ -190,8 +194,12 @@ if __name__ == '__main__':
         print("coherence: ", coh)
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
-        runf.write(cmd + "\n")
+        if inps.xmlFile is None:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output
+            runf.write(cmd + "\n")
+        else:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
+            runf.write(cmd + "\n")
 
     runf.close()
  
