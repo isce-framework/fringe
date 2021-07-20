@@ -15,14 +15,11 @@ def cmdLineParse():
 
     parser = argparse.ArgumentParser(description='Tops SLC stack to VRT')
     parser.add_argument('-i', '--input', dest='indir', type=str,
-            required=True, help='Merged directory of tops stack generation')
+            required=True, help='Merged directory from ISCE2 Sentinel stack processor')
     parser.add_argument('-s', '--stack', dest='stackdir', type=str,
-            default='stack', help='Directory where the vrt stack will be stored (default is "stack")')
+            default='stack', help='Directory where the co-registered SLC stack VRT will be stored (default is "stack")')
     parser.add_argument('-g', '--geom', dest='geomdir', type=str,
-            default='geometry', help='Directory where the geometry vrts will be stored (default is "geometry")')
-    parser.add_argument('-c', '--slcs', dest='outdir', type=str,
-            default='slcs', help='Directory where the individual slc vrts will be stored (default is "slcs")')
-
+            default='geometry', help='Directory where the geometry VRTs will be stored (default is "geometry")')
     parser.add_argument('-b', '--bbox', dest='bbox', nargs=4, type=int, default=None, metavar=('Y0','Y1','X0','X1'),
             help='bounding box in row col: minLine maxLine minPixel maxPixel')
 
