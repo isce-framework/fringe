@@ -94,7 +94,7 @@ if __name__ == '__main__':
     inps = cmdLineParse()
 
     ###Get ann list and slc list
-    slclist = glob.glob(os.path.join(inps.indir,'SLC','*','*.slc.full'))
+    slclist = glob.glob(os.path.join(inps.indir,'SLC','*','*.slc.full.vrt'))
     num_slc = len(slclist)
 
     print('number of SLCs discovered: ', num_slc)
@@ -102,67 +102,11 @@ if __name__ == '__main__':
     
     slclist.sort()
 
-
-    ###Read the first ann file to get some basic things like dimensions
-    ###Just walk through each of them and create a separate VRT first
-    if not os.path.exists(inps.outdir):
-        print('creating directory: {0}'.format(inps.outdir))
-        os.makedirs(inps.outdir)
-    else:
-        print('directory "{0}" already exists.'.format(inps.outdir))
-
-    data = []
-    dates = []
-
-    width = None
-    height = None
-
-    print('write vrt file for each SLC ...')
-    for ind, slc in enumerate(slclist):
-
-        ###Parse the vrt file information.
-        metadata = {}
-        width = None
-        height = None
-        path = None
-
-        ds = gdal.Open(slc , gdal.GA_ReadOnly)
-        width = ds.RasterXSize
-        height = ds.RasterYSize
-        ds = None
-
-        metadata['WAVELENGTH'] = 0.05546576 
-        metadata['ACQUISITION_TIME'] = os.path.basename(os.path.dirname(slc))
-        
-        path = os.path.abspath(slc)
-
-        tag = metadata['ACQUISITION_TIME'] 
-
-        vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
-    <VRTRasterBand dataType="CFloat32" band="1" subClass="VRTRawRasterBand">
-        <sourceFilename>{PATH}</sourceFilename>
-        <ImageOffset>0</ImageOffset>
-        <PixelOffset>8</PixelOffset>
-        <LineOffset>{linewidth}</LineOffset>
-        <ByteOrder>LSB</ByteOrder>
-    </VRTRasterBand>
-</VRTDataset>'''
-        
-
-#        outname =  datetime.datetime.strptime(tag.upper(), '%d-%b-%Y %H:%M:%S UTC').strftime('%Y%m%d')
-
-        outname = metadata['ACQUISITION_TIME']
-        out_file = os.path.join(inps.outdir, '{0}.vrt'.format(outname))
-        print('{} / {}: {}'.format(ind+1, num_slc, out_file))
-        with open(out_file, 'w') as fid:
-            fid.write( vrttmpl.format(width=width,
-                                     height=height,
-                                     PATH=path,
-                                     linewidth=8*width))
-
-        data.append(metadata)
-        dates.append(outname)
-
+    # Extract first slc width and height
+    ds = gdal.Open(slclist[0], gdal.GA_ReadOnly)
+    width = ds.RasterXSize
+    height = ds.RasterYSize
+    ds = None
 
     ####Set up single stack file
     if os.path.exists( inps.stackdir):
@@ -194,10 +138,22 @@ if __name__ == '__main__':
 
     slcs_base_file = os.path.join(inps.stackdir, 'slcs_base.vrt')
     print('write vrt file for stack directory')
+
+    # Wavelength for Sentinel-1
+    wavelength = 0.05546576
     with open(slcs_base_file, 'w') as fid:
         fid.write( '<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">\n'.format(xsize=xsize, ysize=ysize))
 
-        for ind, (date, meta) in enumerate( zip(dates, data)):
+        for ind, slc in enumerate(slclist):
+            # Extract SLCs width and height
+            ds = gdal.Open(slc, gdal.GA_ReadOnly)
+            width = ds.RasterXSize
+            height = ds.RasterYSize
+            ds = None
+
+            # Extract date from co-registered SLCs
+            date = os.path.basename(os.path.dirname(slc))
+
             outstr = '''    <VRTRasterBand dataType="CFloat32" band="{index}">
         <SimpleSource>
             <SourceFilename>{path}</SourceFilename>
@@ -214,9 +170,9 @@ if __name__ == '__main__':
     </VRTRasterBand>\n'''.format(width=width, height=height,
                                 xmin=xmin, ymin=ymin,
                                 xsize=xsize, ysize=ysize,
-                                date=date, acq=meta['ACQUISITION_TIME'],
-                                wvl = meta['WAVELENGTH'], index=ind+1, 
-                                path = os.path.abspath( os.path.join(inps.outdir, date+'.vrt')))
+                                date=date, acq=date,
+                                wvl = wavelength, index=ind+1,
+                                path = slc)
             fid.write(outstr)
 
         fid.write('</VRTDataset>')
