@@ -62,9 +62,13 @@ def radarGeometryTransformer(latfile, lonfile, epsg=4326):
 
 
 def lonlat2pixeline(lonFile, latFile, lon, lat):
+    '''
+    Check if the pixel with lat, lon coordinates is
+    within the processed SLC area
+    '''
     trans = radarGeometryTransformer(latFile, lonFile)
 
-    ###Checkour our location of interest
+    # Check out our location of interest
     success, location = trans.TransformPoint(1, lon, lat, 0.)
     if not success:
         print('Location outside the geolocation array range')
@@ -73,6 +77,9 @@ def lonlat2pixeline(lonFile, latFile, lon, lat):
 
 
 def getLinePixelBbox(geobbox, latFile, lonFile):
+    '''
+    Convert lat/lon box to an area in the SLCs image
+    '''
     south, north, west, east = geobbox
 
     se = lonlat2pixeline(lonFile, latFile, east, south)
@@ -95,45 +102,49 @@ if __name__ == '__main__':
     Main driver.
     '''
 
-    ##Parse command line
+    # Parse command line
     inps = cmdLineParse()
 
-    ###Get ann list and slc list
+    # Get a list of co-registered full SLC VRTs
     slclist = glob.glob(os.path.join(inps.indir, 'SLC', '*', '*.slc.full.vrt'))
     num_slc = len(slclist)
 
     print('number of SLCs discovered: ', num_slc)
     slclist.sort()
 
-    # Extract first slc width and height
-    ds = gdal.Open(slclist[0], gdal.GA_ReadOnly)
-    width = ds.RasterXSize
-    height = ds.RasterYSize
-    ds = None
+    # This is a stack of SLCs. All the co-registered SLCs will have
+    # the same width and height. Just extract shape of first SLCs
+    if num_slc != 0:
+        ds = gdal.Open(slclist[0], gdal.GA_ReadOnly)
+        width = ds.RasterXSize
+        height = ds.RasterYSize
+        ds = None
+    else:
+        print('No SLC discovered. Stop and return')
+        return
 
-    ####Set up single stack file
+    # Creating stack directory
     if os.path.exists(inps.stackdir):
         print('stack directory: {0} already exists'.format(inps.stackdir))
     else:
         print('creating stack directory: {0}'.format(inps.stackdir))
         os.makedirs(inps.stackdir)
 
+    # Open full-res lat/lon arrays in radar geometry
     latFile = os.path.join(inps.indir, "geom_reference", "lat.rdr.full.vrt")
     lonFile = os.path.join(inps.indir, "geom_reference", "lon.rdr.full.vrt")
 
-    # setting up a subset of the stack
+    # Identify a subset area in the stack of co-registered SLCs
     if inps.geobbox:
         # if the bounding box in geo-coordinate is given, this has priority
         print("finding bbox based on geo coordinates of {} ...".format(
             inps.geobbox))
         ymin, ymax, xmin, xmax = getLinePixelBbox(inps.geobbox, latFile,
                                                   lonFile)
-
     elif inps.bbox:
         # if bbox in geo not given then look for line-pixel bbox
         print("using the input bbox based on line and pixel subset")
         ymin, ymax, xmin, xmax = inps.bbox
-
     else:
         # if no bbox provided, the take the full size
         ymin, ymax, xmin, xmax = [0, height, 0, width]
@@ -141,23 +152,19 @@ if __name__ == '__main__':
     xsize = xmax - xmin
     ysize = ymax - ymin
 
+    # Set-up filepath for VRT containing co-registered stack of SLCs
     slcs_base_file = os.path.join(inps.stackdir, 'slcs_base.vrt')
     print('write vrt file for stack directory')
 
-    # Wavelength for Sentinel-1
+    # Allocate wavelength for Sentinel
     wavelength = 0.05546576
+
     with open(slcs_base_file, 'w') as fid:
         fid.write(
             '<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">\n'.format(
                 xsize=xsize, ysize=ysize))
 
         for ind, slc in enumerate(slclist):
-            # Extract SLCs width and height
-            ds = gdal.Open(slc, gdal.GA_ReadOnly)
-            width = ds.RasterXSize
-            height = ds.RasterYSize
-            ds = None
-
             # Extract date from co-registered SLCs
             date = os.path.basename(os.path.dirname(slc))
 
@@ -184,7 +191,7 @@ if __name__ == '__main__':
 
         fid.write('</VRTDataset>')
 
-    ####Set up latitude, longitude and height files
+    # Set-up latitude and longitude files
 
     if os.path.exists(inps.geomdir):
         print('directory {0} already exists.'.format(inps.geomdir))
