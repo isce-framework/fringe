@@ -3,6 +3,7 @@
 
 import glob
 import os
+import sys
 
 import numpy as np
 from osgeo import gdal
@@ -120,8 +121,8 @@ if __name__ == '__main__':
         height = ds.RasterYSize
         ds = None
     else:
-        print('No SLC discovered. Stop and return')
-        return
+        # Exit program if no SLC VRT has been found
+        sys.exit('No SLC discovered. Stop and return')
 
     # Creating stack directory
     if os.path.exists(inps.stackdir):
