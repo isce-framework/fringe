@@ -4,8 +4,8 @@
 import numpy as np 
 import os
 import glob
-import datetime
 from osgeo import gdal
+
 
 def cmdLineParse():
     '''
@@ -15,47 +15,52 @@ def cmdLineParse():
 
     parser = argparse.ArgumentParser(description='Tops SLC stack to VRT')
     parser.add_argument('-i', '--input', dest='indir', type=str,
-            required=True, help='Merged directory from ISCE2 Sentinel stack processor')
+                        required=True,
+                        help='Merged directory from ISCE2 Sentinel stack processor')
     parser.add_argument('-s', '--stack', dest='stackdir', type=str,
-            default='stack', help='Directory where the co-registered SLC stack VRT will be stored (default is "stack")')
+                        default='stack',
+                        help='Directory where the co-registered SLC stack VRT will be stored (default: "stack")')
     parser.add_argument('-g', '--geom', dest='geomdir', type=str,
-            default='geometry', help='Directory where the geometry VRTs will be stored (default is "geometry")')
-    parser.add_argument('-b', '--bbox', dest='bbox', nargs=4, type=int, default=None, metavar=('Y0','Y1','X0','X1'),
-            help='bounding box in row col: minLine maxLine minPixel maxPixel')
-
-    parser.add_argument('-B', '--geo_bbox', dest='geobbox', nargs=4, type=float, default=None, metavar=('S', 'N', 'W', 'E'),
-            help='bounding box in lat lon: South North West East')
+                        default='geometry',
+                        help='Directory where the geometry VRTs will be stored (default: "geometry")')
+    parser.add_argument('-b', '--bbox', dest='bbox', nargs=4, type=int,
+                        default=None, metavar=('Y0', 'Y1', 'X0', 'X1'),
+                        help='bounding box in row col: minLine maxLine minPixel maxPixel')
+    parser.add_argument('-B', '--geo_bbox', dest='geobbox', nargs=4, type=float,
+                        default=None, metavar=('S', 'N', 'W', 'E'),
+                        help='bounding box in lat lon: South North West East')
 
     inps = parser.parse_args()
 
     return inps
 
+
 def radarGeometryTransformer(latfile, lonfile, epsg=4326):
     '''
     Create a coordinate transformer to convert map coordinates to radar image line/pixels.
     '''
-    
+
     driver = gdal.GetDriverByName('VRT')
     inds = gdal.OpenShared(latfile, gdal.GA_ReadOnly)
     tempds = driver.Create('', inds.RasterXSize, inds.RasterYSize, 0)
     inds = None
-    
-    tempds.SetMetadata({'SRS' : 'EPSG:{0}'.format(epsg),
+
+    tempds.SetMetadata({'SRS': 'EPSG:{0}'.format(epsg),
                         'X_DATASET': lonfile,
-                        'X_BAND' : '1',
+                        'X_BAND': '1',
                         'Y_DATASET': latfile,
-                        'Y_BAND' : '1',
-                        'PIXEL_OFFSET' : '0',
-                        'LINE_OFFSET' : '0',
-                        'PIXEL_STEP' : '1',
-                        'LINE_STEP' : '1'}, 'GEOLOCATION')
-    
-    trans = gdal.Transformer( tempds, None, ['METHOD=GEOLOC_ARRAY'])
-    
-    return trans    
+                        'Y_BAND': '1',
+                        'PIXEL_OFFSET': '0',
+                        'LINE_OFFSET': '0',
+                        'PIXEL_STEP': '1',
+                        'LINE_STEP': '1'}, 'GEOLOCATION')
+
+    trans = gdal.Transformer(tempds, None, ['METHOD=GEOLOC_ARRAY'])
+
+    return trans
+
 
 def lonlat2pixeline(lonFile, latFile, lon, lat):
-
     trans = radarGeometryTransformer(latFile, lonFile)
 
     ###Checkour our location of interest
@@ -67,8 +72,7 @@ def lonlat2pixeline(lonFile, latFile, lon, lat):
 
 
 def getLinePixelBbox(geobbox, latFile, lonFile):
-
-    south,north, west, east = geobbox
+    south, north, west, east = geobbox
 
     se = lonlat2pixeline(lonFile, latFile, east, south)
     nw = lonlat2pixeline(lonFile, latFile, west, north)
@@ -89,17 +93,15 @@ if __name__ == '__main__':
     '''
     Main driver.
     '''
-    
+
     ##Parse command line
     inps = cmdLineParse()
 
     ###Get ann list and slc list
-    slclist = glob.glob(os.path.join(inps.indir,'SLC','*','*.slc.full.vrt'))
+    slclist = glob.glob(os.path.join(inps.indir, 'SLC', '*', '*.slc.full.vrt'))
     num_slc = len(slclist)
 
     print('number of SLCs discovered: ', num_slc)
-    print('we assume that the SLCs and the vrt files are sorted in the same order')
-    
     slclist.sort()
 
     # Extract first slc width and height
@@ -109,11 +111,11 @@ if __name__ == '__main__':
     ds = None
 
     ####Set up single stack file
-    if os.path.exists( inps.stackdir):
+    if os.path.exists(inps.stackdir):
         print('stack directory: {0} already exists'.format(inps.stackdir))
     else:
         print('creating stack directory: {0}'.format(inps.stackdir))
-        os.makedirs(inps.stackdir)    
+        os.makedirs(inps.stackdir)
 
     latFile = os.path.join(inps.indir, "geom_reference", "lat.rdr.full.vrt")
     lonFile = os.path.join(inps.indir, "geom_reference", "lon.rdr.full.vrt")
@@ -121,8 +123,10 @@ if __name__ == '__main__':
     # setting up a subset of the stack
     if inps.geobbox:
         # if the bounding box in geo-coordinate is given, this has priority
-        print("finding bbox based on geo coordinates of {} ...".format(inps.geobbox))
-        ymin, ymax, xmin, xmax = getLinePixelBbox(inps.geobbox, latFile, lonFile)
+        print("finding bbox based on geo coordinates of {} ...".format(
+            inps.geobbox))
+        ymin, ymax, xmin, xmax = getLinePixelBbox(inps.geobbox, latFile,
+                                                  lonFile)
 
     elif inps.bbox:
         # if bbox in geo not given then look for line-pixel bbox
@@ -131,7 +135,7 @@ if __name__ == '__main__':
 
     else:
         # if no bbox provided, the take the full size
-        ymin, ymax, xmin, xmax = [0 , height, 0 , width]
+        ymin, ymax, xmin, xmax = [0, height, 0, width]
 
     xsize = xmax - xmin
     ysize = ymax - ymin
@@ -142,7 +146,9 @@ if __name__ == '__main__':
     # Wavelength for Sentinel-1
     wavelength = 0.05546576
     with open(slcs_base_file, 'w') as fid:
-        fid.write( '<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">\n'.format(xsize=xsize, ysize=ysize))
+        fid.write(
+            '<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">\n'.format(
+                xsize=xsize, ysize=ysize))
 
         for ind, slc in enumerate(slclist):
             # Extract SLCs width and height
@@ -168,25 +174,24 @@ if __name__ == '__main__':
             <MDI key="AcquisitionTime">{acq}</MDI>
         </Metadata>
     </VRTRasterBand>\n'''.format(width=width, height=height,
-                                xmin=xmin, ymin=ymin,
-                                xsize=xsize, ysize=ysize,
-                                date=date, acq=date,
-                                wvl = wavelength, index=ind+1,
-                                path = slc)
+                                 xmin=xmin, ymin=ymin,
+                                 xsize=xsize, ysize=ysize,
+                                 date=date, acq=date,
+                                 wvl=wavelength, index=ind + 1,
+                                 path=slc)
             fid.write(outstr)
 
         fid.write('</VRTDataset>')
 
     ####Set up latitude, longitude and height files
-    
-    if os.path.exists( inps.geomdir):
+
+    if os.path.exists(inps.geomdir):
         print('directory {0} already exists.'.format(inps.geomdir))
     else:
         print('creating geometry directory: {0}'.format(inps.geomdir))
-        os.makedirs( inps.geomdir)
+        os.makedirs(inps.geomdir)
 
-
-    vrttmpl='''<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
+    vrttmpl = '''<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
     <VRTRasterBand dataType="Float64" band="1">
       <SimpleSource>
         <SourceFilename>{PATH}</SourceFilename>
@@ -201,13 +206,13 @@ if __name__ == '__main__':
     print('write vrt file for geometry dataset')
     layers = ['lat', 'lon', 'hgt']
     for ind, val in enumerate(layers):
-        with open( os.path.join(inps.geomdir, val+'.vrt'), 'w') as fid:
-            fid.write( vrttmpl.format( xsize = xsize, ysize = ysize,
-                                       xmin = xmin, ymin = ymin,
-                                       width = width,
-                                       height = height,
-                                       PATH = os.path.abspath( os.path.join(inps.indir, 'geom_reference', val+'.rdr.full.vrt')),
-                                       linewidth = width * 8))
-
-
-
+        with open(os.path.join(inps.geomdir, val + '.vrt'), 'w') as fid:
+            fid.write(vrttmpl.format(xsize=xsize, ysize=ysize,
+                                     xmin=xmin, ymin=ymin,
+                                     width=width,
+                                     height=height,
+                                     PATH=os.path.abspath(
+                                         os.path.join(inps.indir,
+                                                      'geom_reference',
+                                                      val + '.rdr.full.vrt')),
+                                     linewidth=width * 8))
