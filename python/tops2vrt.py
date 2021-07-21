@@ -220,6 +220,9 @@ if __name__ == '__main__':
 
     print('write vrt file for geometry dataset')
     layers = ['lat', 'lon', 'hgt']
+
+    # Define pixel_offset variable (bytes)
+    pixel_offset = 8
     for ind, val in enumerate(layers):
         with open(os.path.join(inps.geomdir, val + '.vrt'), 'w') as fid:
             fid.write(vrttmpl.format(xsize=xsize, ysize=ysize,
@@ -230,4 +233,4 @@ if __name__ == '__main__':
                                          os.path.join(inps.indir,
                                                       'geom_reference',
                                                       val + '.rdr.full.vrt')),
-                                     linewidth=width * 8))
+                                     linewidth=width * pixel_offset))
