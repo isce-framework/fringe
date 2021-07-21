@@ -19,6 +19,15 @@ def cmdLineParse():
     parser.add_argument('-i', '--input', dest='indir', type=str,
                         required=True,
                         help='Merged directory from ISCE2 Sentinel stack processor')
+    parser.add_argument('-S', '--slc_dir', dest='slc_dir', type=str,
+                        default='SLC',
+                        help='Name of the directory containing stack of SLCs (default: "SLC")')
+    parser.add_argument('-e', '--extension', dest='ext', type=str,
+                        default='slc.full.vrt',
+                        help='File extension of co-registered SLC files (default: "slc.full.vrt")')
+    parser.add_argument('-w', '--wavelength', dest='wavelength', type=float,
+                        default=0.05546576,
+                        help='Radar wavelenght for SLC stack (default: "0.05546576")')
     parser.add_argument('-s', '--stack', dest='stackdir', type=str,
                         default='stack',
                         help='Directory where the co-registered SLC stack VRT will be stored (default: "stack")')
@@ -107,7 +116,7 @@ if __name__ == '__main__':
     inps = cmdLineParse()
 
     # Get a list of co-registered full SLC VRTs
-    slclist = glob.glob(os.path.join(inps.indir, 'SLC', '*', '*.slc.full.vrt'))
+    slclist = glob.glob(os.path.join(inps.indir, inps.slc_dir, '*', f'*{inps.ext}'))
     num_slc = len(slclist)
 
     print('number of SLCs discovered: ', num_slc)
@@ -157,9 +166,6 @@ if __name__ == '__main__':
     slcs_base_file = os.path.join(inps.stackdir, 'slcs_base.vrt')
     print('write vrt file for stack directory')
 
-    # Allocate wavelength for Sentinel
-    wavelength = 0.05546576
-
     with open(slcs_base_file, 'w') as fid:
         fid.write(
             '<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">\n'.format(
@@ -186,7 +192,7 @@ if __name__ == '__main__':
                                  xmin=xmin, ymin=ymin,
                                  xsize=xsize, ysize=ysize,
                                  date=date, acq=date,
-                                 wvl=wavelength, index=ind + 1,
+                                 wvl=inps.wavelength, index=ind + 1,
                                  path=slc)
             fid.write(outstr)
 
