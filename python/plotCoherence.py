@@ -41,6 +41,7 @@ class Dummy(object):
 class BitMask:
     def __init__(self, Ny, Nx):
         """A BitMask class
+
         Parameters
         ----------
         Ny: Number of lines
