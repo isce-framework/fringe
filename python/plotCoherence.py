@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 
 def cmdLineParse():
     """Command line parse."""
-
     parser = argparse.ArgumentParser(
         description="plots coherence matrix of a neighborhood"
     )
@@ -41,7 +40,7 @@ class Dummy(object):
 
 class BitMask:
     def __init__(self, Ny, Nx):
-        """
+        """A BitMask class
         Parameters
         ----------
         Ny: Number of lines
@@ -68,7 +67,6 @@ def unpack(seq):
 
 def loadData(inps):
     """Load relevant data for a pixel."""
-
     ds = gdal.Open(inps.wtsDS, gdal.GA_ReadOnly)
     Nx = int(ds.GetMetadataItem("HALFWINDOWX", "ENVI"))
     Ny = int(ds.GetMetadataItem("HALFWINDOWY", "ENVI"))
