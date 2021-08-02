@@ -7,9 +7,7 @@ import matplotlib.pyplot as plt
 
 
 def cmdLineParse():
-    """
-    Command line parse.
-    """
+    """Command line parse."""
 
     parser = argparse.ArgumentParser(
         description="plots coherence matrix of a neighborhood"
@@ -43,6 +41,12 @@ class Dummy(object):
 
 class BitMask:
     def __init__(self, Ny, Nx):
+        """
+        Parameters
+        ----------
+        Ny: Number of lines
+        Nx: Number of pixels
+        """
         self.Ny = Ny
         self.Nx = Nx
 
@@ -63,15 +67,12 @@ def unpack(seq):
 
 
 def loadData(inps):
-    """
-    Load relevant data for a pixel.
-    """
+    """Load relevant data for a pixel."""
 
     ds = gdal.Open(inps.wtsDS, gdal.GA_ReadOnly)
     Nx = int(ds.GetMetadataItem("HALFWINDOWX", "ENVI"))
     Ny = int(ds.GetMetadataItem("HALFWINDOWY", "ENVI"))
     width = ds.RasterXSize
-    lgth = ds.RasterYSize
     bands = ds.RasterCount
     ds = None
 
@@ -80,11 +81,7 @@ def loadData(inps):
     mask = fid.read(bands * 4)
     fid.close()
 
-    # bits = unpack(mask)
     npix = (2 * Ny + 1) * (2 * Nx + 1)
-    # bits = bits[:npix]
-    # bitmask=(np.array(bits) == 1)
-    # count = np.sum(bits)
     masker = BitMask(Ny, Nx)
 
     bitmask = np.zeros(npix, dtype=bool)
@@ -131,7 +128,7 @@ def covariance(C1, C2):
 
 
 def computeCovar(stack):
-    numberOfSamples, numberOfSlc = stack.shape
+    numberOfSlc = stack.shape[1]
     cov_mat = np.zeros((numberOfSlc, numberOfSlc), dtype=np.complex64)
     for ti in range(numberOfSlc):
         for tj in range(ti + 1, numberOfSlc):
@@ -144,9 +141,6 @@ def computeCovar(stack):
 
 
 if __name__ == "__main__":
-    """
-    Main driver.
-    """
 
     ###Parse command line
     inps = cmdLineParse()
