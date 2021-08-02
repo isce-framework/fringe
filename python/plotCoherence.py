@@ -10,7 +10,7 @@ def cmdLineParse():
     Command line parse.
     '''
 
-    parser = argparse.ArgumentParser(description='Test MLE for single pixel')
+    parser = argparse.ArgumentParser(description='plots coherence matrix of a neighborhood')
     parser.add_argument('-i', dest='inputDS', type=str, required=True,
             help='Input Stack VRT')
     parser.add_argument('-w', dest='wtsDS', type=str, required=True,
