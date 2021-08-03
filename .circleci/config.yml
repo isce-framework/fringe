@@ -18,9 +18,7 @@ jobs:
             bash miniconda.sh -b -p /home/ubuntu/miniconda
             source /home/ubuntu/miniconda/etc/profile.d/conda.sh
             conda activate base
-            conda create -y -n fringe
-            conda activate fringe
-            conda install -y -c conda-forge --file fringe/docs/requirements_linux.txt
+            conda env create -f fringe/docs/requirements_linux.yml
       - run:
           name: Install FRInGE
           command: |
