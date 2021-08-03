@@ -18,7 +18,7 @@ jobs:
             bash miniconda.sh -b -p /home/ubuntu/miniconda
             source /home/ubuntu/miniconda/etc/profile.d/conda.sh
             conda activate base
-            conda env create -f fringe/docs/requirements_linux.yml
+            conda env create -f fringe/docs/environment_linux.yml
       - run:
           name: Install FRInGE
           command: |
