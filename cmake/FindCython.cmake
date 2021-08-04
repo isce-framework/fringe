@@ -28,7 +28,7 @@ find_package(Python 3.6)
 if(Python_Interpreter_FOUND)
   get_filename_component( _python_path ${Python_EXECUTABLE} PATH )
   find_program( CYTHON_EXECUTABLE
-	  NAMES cython cython.bat cython${Python_VERSION_MAJOR} cython-${Python_VERSION_MAJOR}.${Python_VERSION_MINOR} cython3
+	  NAMES cython${Python_VERSION_MAJOR} cython-${Python_VERSION_MAJOR}.${Python_VERSION_MINOR} cython cython.bat
     HINTS ${_python_path}
     )
 else()
