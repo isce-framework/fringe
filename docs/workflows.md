@@ -76,7 +76,7 @@ FRInGE currently is focused on estimating wrapped phase time-series for PS and D
 To prepare unwrapping commands for each epoch of time-series run `unwrapStack.py`. This will write the unwrapping command to a shell script _run_unwrap.sh_.
 
 ```
-unwrapStack.py -s slcs -m Sequential/miniStacks/ -d Sequential/Datum_connection/ -M 15 -u 'unwrap_fringe.py -m snaphu'
+unwrapStack.py -s slcs -m Sequential/miniStacks/ -d Sequential/Datum_connection/ -M 15 -u 'unwrap_fringe.py' --unw_method snaphu
 ```
 
 Alternatively one may use `integratePS.py --unw_method snaphu` in previous step, which will write a shell script _run_unwrap_ps_ds.sh_ (recommended).

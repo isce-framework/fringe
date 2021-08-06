@@ -39,6 +39,9 @@ def cmdLineParser():
 
     parser.add_argument('--unw_method','--unwrap_method', type=str, dest='unwrapMethod',
             default='phass', choices=('snaphu','phass'), help='unwrap method.')
+    
+    parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
+            required=False, help='path of reference xml file for unwrapping with snaphu')
 
     return parser.parse_args()
 
@@ -175,8 +178,12 @@ if __name__ == '__main__':
         print("coherence: ", coh) 
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output
-        runf.write(cmd + "\n") 
+        if inps.xmlFile is None:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output
+            runf.write(cmd + "\n")
+        else:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
+            runf.write(cmd + "\n") 
 
     for k in datumDict.keys():
         print(k)
@@ -187,8 +194,12 @@ if __name__ == '__main__':
         print("coherence: ", coh)
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output
-        runf.write(cmd + "\n")
+        if inps.xmlFile is None:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output
+            runf.write(cmd + "\n")
+        else:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
+            runf.write(cmd + "\n")
 
     runf.close()
  

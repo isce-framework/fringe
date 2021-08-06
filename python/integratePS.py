@@ -45,6 +45,9 @@ def cmdLineParser(iargs = None):
     parser.add_argument('-u', '--unw_method', '--unwrap_method', type=str, dest='unwrapMethod', choices=('snaphu','phass'),
             help='phase unwrapping method. e.g., snaphu, phass. If enabled, a shell file "run_unwrap_ps_ds.sh" with unwrap command will be created.')
 
+    parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
+            required=False, help='path of reference xml file for unwrapping with snaphu')
+
     return parser.parse_args()
 
 def rewrap(data):
@@ -271,8 +274,12 @@ def main(iargs=None):
             date_j = pair.split('-')[1]
             intName = os.path.join(inps.outDir, "{0}_{1}.int".format(date_i, date_j))
             unwName = os.path.join(unwDir, "{0}_{1}.unw".format(date_i, date_j))
-            cmd = "unwrap_fringe.py -m " + inps.unwrapMethod + " -i " + intName + " -c " + corName + " -o " + unwName
-            runf.write(cmd + "\n")
+            if inps.xmlFile is None:
+                cmd = "unwrap_fringe.py -m " + inps.unwrapMethod + " -i " + intName + " -c " + corName + " -o " + unwName
+                runf.write(cmd + "\n")
+            else:
+                cmd = "unwrap_fringe.py -m " + inps.unwrapMethod + " -i " + intName + " -c " + corName + " -o " + unwName + " -x " + inps.xmlFile
+                runf.write(cmd + "\n")
         runf.close()
 
     dsSLC = None

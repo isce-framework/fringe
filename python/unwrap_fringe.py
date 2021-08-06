@@ -26,6 +26,9 @@ def cmdLineParser():
 
     parser.add_argument('-m', '--method', type=str, dest='method',
             default='snaphu', help='unwrapping method: default = snaphu')
+    
+    parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
+            required=False, help='path of reference xml file for unwrapping with snaphu')
 
     return parser.parse_args()
 
@@ -49,15 +52,67 @@ def unwrap_phass(inps, length, width):
     phass.unwrap()
 
     write_xml(phass.outputFile, width, length, 1 , "FLOAT", "BIL")
+    
+#Adapted code from unwrap.py and s1a_isce_utils.py in topsStack
+def extractInfo(inps):
+    
+    '''
+    Extract required information from pickle file.
+    '''
+    from isceobj.Planet.Planet import Planet
+    from isceobj.Util.geo.ellipsoid import Ellipsoid
+    from iscesys.Component.ProductManager import ProductManager as PM
 
-def unwrap_snaphu(inps, length, width):
-    import isce
-    import isceobj
+    pm = PM()
+    #pm.configure
+    frame = pm.loadProduct(inps.xmlFile)
+
+    burst = frame.bursts[0]
+    planet = Planet(pname='Earth')
+    elp = Ellipsoid(planet.ellipsoid.a, planet.ellipsoid.e2, 'WGS84')
+
+    data = {}
+    data['wavelength'] = burst.radarWavelength
+
+    tstart = frame.bursts[0].sensingStart
+    #tend   = frame.bursts[-1].sensingStop
+    #tmid = tstart + 0.5*(tend - tstart)
+    tmid = tstart
+
+
+    orbit = burst.orbit
+    peg = orbit.interpolateOrbit(tmid, method='hermite')
+
+    refElp = Planet(pname='Earth').ellipsoid
+    llh = refElp.xyz_to_llh(peg.getPosition())
+    hdg = orbit.getENUHeading(tmid)
+    refElp.setSCH(llh[0], llh[1], hdg)
+
+    earthRadius = refElp.pegRadCur
+
+    altitude   = llh[2]
+
+    #sv = burst.orbit.interpolateOrbit(tmid, method='hermite')
+    #pos = sv.getPosition()
+    #llh = elp.ECEF(pos[0], pos[1], pos[2]).llh()
+
+    data['altitude'] = altitude  #llh.hgt
+
+    #hdg = burst.orbit.getHeading()
+    data['earthRadius'] = earthRadius  #elp.local_radius_of_curvature(llh.lat, hdg)
+    return data
+
+def unwrap_snaphu(inps, length, width, metadata):
     from contrib.Snaphu.Snaphu import Snaphu
-   
-    altitude = 800000.0
-    earthRadius = 6371000.0
-    wavelength = 0.056
+    
+    if metadata is None:
+        altitude = 800000.0
+        earthRadius = 6371000.0
+        wavelength = 0.056
+    else:
+        altitude = metadata['altitude']
+        earthRadius = metadata['earthRadius']
+        wavelength = metadata['wavelength']
 
     snp = Snaphu()
     snp.setInitOnly(False)
@@ -122,8 +177,9 @@ if __name__ == '__main__':
         os.makedirs(unwrapDir)
 
     if inps.method == "snaphu":
-        unwrap_snaphu(inps, length, width)
+        if inps.xmlFile is not None:
+            metadata = extractInfo(inps)
+        unwrap_snaphu(inps, length, width, metadata)
 
     elif inps.method == "phass":
         unwrap_phass(inps, length, width)
-
