@@ -102,7 +102,7 @@ def extractInfo(inps):
     data['earthRadius'] = earthRadius  #elp.local_radius_of_curvature(llh.lat, hdg)
     return data
 
-def unwrap_snaphu(inps, length, width, metadata):
+def unwrap_snaphu(inps, length, width, metadata=None):
     from contrib.Snaphu.Snaphu import Snaphu
     
     if metadata is None:
