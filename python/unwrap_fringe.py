@@ -179,6 +179,8 @@ if __name__ == '__main__':
     if inps.method == "snaphu":
         if inps.xmlFile is not None:
             metadata = extractInfo(inps)
+        else:
+            metadata = None
         unwrap_snaphu(inps, length, width, metadata)
 
     elif inps.method == "phass":
