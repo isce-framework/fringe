@@ -4,6 +4,7 @@
 
 import os
 import argparse
+import shutil
 from Stack import Stack, MiniStack
 
 def cmdLineParser():
@@ -134,8 +135,8 @@ def moveCompressedSlc(outDir, compressedSlcDir):
     compSlcMoved = os.path.join(tempCompSlcDir, "compslc.slc") 
     compSlcHdrMoved = os.path.join(tempCompSlcDir, "compslc.slc.hdr")
 
-    os.system("mv {0} {1}".format(compSlc, compSlcMoved))
-    os.system("mv {0} {1}".format(compSlcHdr,  compSlcHdrMoved))
+    shutil.move(compSlc, compSlcMoved)
+    shutil.move(compSlcHdr, compSlcHdrMoved)
     os.system("gdal_translate -of VRT {0} {1}".format(compSlcMoved , compSlcMoved + ".vrt"))
 
     return None
