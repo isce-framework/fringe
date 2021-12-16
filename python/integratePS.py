@@ -268,6 +268,7 @@ def main(iargs=None):
         # an output script with commands to unwrap interferograms
         run_outname = "run_unwrap_ps_ds.sh"
         runf= open(run_outname,'w')
+        runf.write("set -e\n")
 
         for pair in networkObj.pairsDates:
             date_i = pair.split('-')[0]
