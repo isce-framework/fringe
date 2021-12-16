@@ -210,7 +210,7 @@ int evd_process(evdOptions *opts)
         for(int b=1; b<=nbands; b++)
         {
             const char* date = inDataset->GetRasterBand(b)->GetMetadataItem("Date", "slc");
-            if (strlen(date) != 8)
+            if (strnlen(date, 9) != 8)
             {
                 std::cout << "Band " << b << " does not appear to have Date information in slc metadata domain \n";
                 GDALClose(inDataset);
