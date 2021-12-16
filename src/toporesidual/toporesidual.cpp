@@ -96,10 +96,10 @@ int toporesidual_process(topoOptions *opts)
             mOptions = CSLSetNameValue(mOptions, "INTERLEAVE", "BIP");
             mOptions = CSLSetNameValue(mOptions, "SUFFIX", "ADD");
 
-            const char* fname = CPLStrdup(CPLFormFilename(opts->outputFolder.c_str(), opts->deltazDS.c_str(), NULL));
+            std::string fname = CPLFormFilename(opts->outputFolder.c_str(), opts->deltazDS.c_str(), NULL);
 
-            std::cout << "Corr: " << fname <<  " " << strlen(fname) << "\n";
-            deltazDataset = (GDALDataset*) poDriver->Create(fname, cols, rows, 1, GDT_Float32, mOptions);
+            std::cout << "Corr: " << fname <<  " " << fname.size() << "\n";
+            deltazDataset = (GDALDataset*) poDriver->Create(fname.c_str(), cols, rows, 1, GDT_Float32, mOptions);
 
             if (deltazDataset == NULL)
             {
@@ -116,9 +116,9 @@ int toporesidual_process(topoOptions *opts)
             std::cout << "Created : " << fname << " " << deltazDataset << "\n";
 
             // create output temporal coherence
-            fname = CPLStrdup(CPLFormFilename(opts->outputFolder.c_str(), opts->cohDS.c_str(), NULL));
-            std::cout << "Corr: " << fname <<  " " << strlen(fname) << "\n";
-            cohDataset = (GDALDataset*) poDriver->Create(fname, cols, rows, 1, GDT_Float32, mOptions);
+            fname = CPLFormFilename(opts->outputFolder.c_str(), opts->cohDS.c_str(), NULL);
+            std::cout << "Corr: " << fname <<  " " << fname.size() << "\n";
+            cohDataset = (GDALDataset*) poDriver->Create(fname.c_str(), cols, rows, 1, GDT_Float32, mOptions);
             
             if (deltazDataset == NULL)
             {
