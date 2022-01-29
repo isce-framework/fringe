@@ -43,3 +43,4 @@ jobs:
               evd.py -h
               nmap.py -h
               ampdispersion.py -h
+              python3 /home/ubuntu/fringe/tests/evd/test_evd.py
