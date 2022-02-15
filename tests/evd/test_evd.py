@@ -388,17 +388,7 @@ def main():
     print("rmse for evd fringe [degrees]:", rmse_fringe_evd)
     print("rmse for mle fringe [degrees]:", rmse_fringe_mle)
 
-    # estimate RMSE
-    assert rmse_fringe_evd <= 10
-    assert rmse_fringe_mle <= 10
 
-    # check the neighborhood map
-    count = test_bit_mask(weight_dataset_name)
-    print(f"count: {count}")
-    # we have simulated an ideah homogeneous neighborhood of Nx*Ny.
-    # Therefore the number of self-similar pixels in the neighborhood
-    # should be Nx*Ny
-    assert count == Nx * Ny
     #######################
     # for debugging purpose
     plot_flag = False
@@ -435,6 +425,17 @@ def main():
         )
         plt.show()
 
+    # check the RMSE of the FRINGE results
+    assert rmse_fringe_evd <= 10
+    assert rmse_fringe_mle <= 10
+
+    # check the neighborhood map
+    count = test_bit_mask(weight_dataset_name)
+    print(f"count: {count}")
+    # we have simulated an ideah homogeneous neighborhood of Nx*Ny.
+    # Therefore the number of self-similar pixels in the neighborhood
+    # should be Nx*Ny
+    assert count == Nx * Ny
 
 if __name__ == "__main__":
 
