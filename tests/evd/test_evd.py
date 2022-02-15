@@ -32,7 +32,9 @@ def simulate_neighborhood_stack(corr_matrix, neighborSamples=200):
     neighbor_stack = np.zeros((numberOfSlc, neighborSamples), dtype=np.complex64)
     for ii in range(neighborSamples):
         slcs = simulate_noise(corr_matrix)
-        neighbor_stack[:, ii] = slcs
+        # To ensure that the neighborhood is homogeneous,
+        # we set the amplitude of all SLCs to zero
+        neighbor_stack[:, ii] = np.exp(1J*np.angle(slcs))
 
     return neighbor_stack
 
