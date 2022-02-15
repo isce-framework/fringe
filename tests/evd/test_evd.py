@@ -12,7 +12,6 @@ import glob
 def simulate_noise(corr_matrix):
     N = corr_matrix.shape[0]
 
-    nsar = corr_matrix.shape[0]
     w, v = np.linalg.eigh(corr_matrix)
     msk = w < 1e-3
     w[msk] = 0.0
@@ -83,7 +82,7 @@ def covarinace(C1, C2):
 
 
 def compute_covariance_matrix(neighbor_stack):
-    numberOfSlc, numberOfSamples = neighbor_stack.shape
+    numberOfSlc = neighbor_stack.shape[0]
     cov_mat = np.zeros((numberOfSlc, numberOfSlc), dtype=np.complex64)
     for ti in range(numberOfSlc):
         for tj in range(ti + 1, numberOfSlc):
@@ -164,6 +163,7 @@ def simulate_bit_mask(Ny, Nx, filename="neighborhood_map"):
 
 class BitMask:
     def __init__(self, Ny, Nx):
+
         """A BitMask class
 
         Parameters
@@ -219,7 +219,7 @@ def test_bit_mask(filename):
 def write_slc_stack(neighbor_stack, output_slc_dir, Nx, Ny, dt=12):
     os.makedirs(output_slc_dir, exist_ok=False)
 
-    nslc, n_neighborhood = neighbor_stack.shape
+    nslc = neighbor_stack.shape[0]
     t0 = datetime.datetime(2022, 1, 1)
     for ii in range(nslc):
         t = t0 + datetime.timedelta(dt * ii)
@@ -297,14 +297,14 @@ def main():
     # number of samples in the neighborhood
     neighborSamples = Ny * Nx
 
-    # simulate a complex covraince matrix based on the 
+    # simulate a complex covraince matrix based on the
     # simulated phase and coherence model
     simulated_covariance_matrix = simulate_coherence_matrix(
         t, gamma0, gamma_inf, Tau0, signal_phase
     )
 
-    # simulate a neighborhood of SLCs with size of 
-    # neighborSamples for Nt acquisitions 
+    # simulate a neighborhood of SLCs with size of
+    # neighborSamples for Nt acquisitions
     neighbor_stack = simulate_neighborhood_stack(
         simulated_covariance_matrix, neighborSamples=neighborSamples
     )
@@ -315,7 +315,7 @@ def main():
     # estimate wrapped phase with a prototype estimator of EVD
     evd_estimate = estimate_evd(estimated_covariance_matrix)
 
-    # compute residual which is the phase difference between 
+    # compute residual which is the phase difference between
     # simulated and estimated wrapped phase series
     residual_evd = np.angle(np.exp(1j * signal_phase) * np.conjugate(evd_estimate))
     # RMSE of the residual phase
@@ -329,11 +329,10 @@ def main():
 
     # output directory to store the simulated data for this unit test
     output_simulation_dir = "simulations"
-    # output subdirectory to store SLCs 
+    # output subdirectory to store SLCs
     output_slc_dir = os.path.join(output_simulation_dir, "SLC")
     # write flat binary SLCs that Fringe can read
     write_slc_stack(neighbor_stack, output_slc_dir, Nx, Ny)
-    
     # a dummy geometry directory similar to isce2 results
     output_geometry_dir = os.path.join(output_simulation_dir, "geom_reference")
     write_dummy_geometry(output_geometry_dir, Nx, Ny)
