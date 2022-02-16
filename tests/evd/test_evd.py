@@ -163,7 +163,6 @@ def simulate_bit_mask(Ny, Nx, filename="neighborhood_map"):
 
 class BitMask:
     def __init__(self, Ny, Nx):
-
         """A BitMask class
 
         Parameters
