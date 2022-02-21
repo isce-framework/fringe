@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 
-import numpy as np
-from osgeo import gdal
-import re
 from array import array
-import os
 import datetime
 import glob
+import os
+import re
+import numpy as np
+from osgeo import gdal
 
-
-def simulate_noise(corr_matrix):
+def simulate_noise(corr_matrix: np.array) -> np.array:
     N = corr_matrix.shape[0]
 
     w, v = np.linalg.eigh(corr_matrix)
-    msk = w < 1e-3
-    w[msk] = 0.0
+    w[w < 1e-3] = 0.0
 
     C = np.dot(v, np.dot(np.diag(np.sqrt(w)), np.matrix.getH(v)))
     Z = (np.random.randn(N) + 1j * np.random.randn(N)) / np.sqrt(2)
@@ -22,17 +20,16 @@ def simulate_noise(corr_matrix):
 
     return slc
 
+def simulate_neighborhood_stack(corr_matrix: np.array, neighbor_samples: int = 200) -> np.array:
 
-def simulate_neighborhood_stack(corr_matrix, neighborSamples=200):
-
-    numberOfSlc = corr_matrix.shape[0]
+    nslc = corr_matrix.shape[0]
     # A 2D matrix for a neighborhood over time.
-    # Each column is the neighborhood caomplex data for each acquisition date
-    neighbor_stack = np.zeros((numberOfSlc, neighborSamples), dtype=np.complex64)
-    for ii in range(neighborSamples):
+    # Each column is the neighborhood complex data for each acquisition date
+    neighbor_stack = np.zeros((nslc, neighbor_samples), dtype=np.complex64)
+    for ii in range(neighbor_samples):
         slcs = simulate_noise(corr_matrix)
         # To ensure that the neighborhood is homogeneous,
-        # we set the amplitude of all SLCs to zero
+        # we set the amplitude of all SLCs to one
         neighbor_stack[:, ii] = np.exp(1J*np.angle(slcs))
 
     return neighbor_stack
@@ -51,8 +48,8 @@ def simulate_coherence_matrix(t, gamma0, gamma_inf, Tau0, ph):
 
 
 def simulate_phase_timeSeries(
-    time_series_length=365, acquisition_interval=12, signal_rate=1, std_random=0, k=1
-):
+        time_series_length: int = 365, acquisition_interval: int = 12, signal_rate: float = 1.0, std_random: float = 0, k: int = 1
+        ):
     # time_series_length: length of time-series in days
     # acquisition_interval: time-differense between subsequent acquisitions (days)
     # signal_rate: linear rate of the signal (rad/year)
@@ -72,21 +69,21 @@ def simulate_phase_timeSeries(
     return signal_phase, t
 
 
-def covarinace(C1, C2):
+def covariance(c1, c2):
 
-    A1 = np.sum(np.abs(C1) ** 2)
-    A2 = np.sum(np.abs(C2) ** 2)
+    a1 = np.sum(np.abs(c1) ** 2)
+    a2 = np.sum(np.abs(c2) ** 2)
 
-    cov = np.sum(C1 * np.conjugate(C2)) / (np.sqrt(A1) * np.sqrt(A2))
+    cov = np.sum(c1 * np.conjugate(c2)) / (np.sqrt(a1) * np.sqrt(a2))
     return cov
 
 
 def compute_covariance_matrix(neighbor_stack):
-    numberOfSlc = neighbor_stack.shape[0]
-    cov_mat = np.zeros((numberOfSlc, numberOfSlc), dtype=np.complex64)
-    for ti in range(numberOfSlc):
-        for tj in range(ti + 1, numberOfSlc):
-            cov = covarinace(neighbor_stack[ti, :], neighbor_stack[tj, :])
+    nslc = neighbor_stack.shape[0]
+    cov_mat = np.zeros((nslc, nslc), dtype=np.complex64)
+    for ti in range(nslc):
+        for tj in range(ti + 1, nslc):
+            cov = covariance(neighbor_stack[ti, :], neighbor_stack[tj, :])
             cov_mat[ti, tj] = cov
             cov_mat[tj, ti] = np.conjugate(cov)
         cov_mat[ti, ti] = 1.0
@@ -113,28 +110,28 @@ def estimate_evd(cov_mat):
     return evd_estimate
 
 
-def simulate_bit_mask(Ny, Nx, filename="neighborhood_map"):
+def simulate_bit_mask(ny, nx, filename="neighborhood_map"):
 
     # number of uint32 bytes needed to store weights
-    number_of_bytes = np.ceil((Ny * Nx) / 32)
+    number_of_bytes = np.ceil((ny * nx) / 32)
 
-    flags = np.ones((Ny, Nx), dtype=np.bool_)
-    flag_bits = np.zeros((Ny, Nx), dtype=np.uint8)
+    flags = np.ones((ny, nx), dtype=np.bool_)
+    flag_bits = np.zeros((ny, nx), dtype=np.uint8)
 
-    for ii in range(Ny):
-        for jj in range(Nx):
+    for ii in range(ny):
+        for jj in range(nx):
             flag_bits[ii, jj] = flags[ii, jj].astype(np.uint8)
 
     # create the weight dataset for 1 neighborhood
-    cols = Nx
-    rows = Ny
+    cols = nx
+    rows = ny
     n_bands = int(number_of_bytes)
     drv = gdal.GetDriverByName("ENVI")
     options = ["INTERLEAVE=BIP"]
     ds = drv.Create(filename, cols, rows, n_bands, gdal.GDT_UInt32, options)
 
-    half_window_y = int(Ny / 2)
-    half_window_x = int(Nx / 2)
+    half_window_y = int(ny / 2)
+    half_window_x = int(nx / 2)
 
     ds.SetMetadata(
         {"HALFWINDOWX": str(half_window_x), "HALFWINDOWY": str(half_window_y)}
@@ -143,14 +140,12 @@ def simulate_bit_mask(Ny, Nx, filename="neighborhood_map"):
 
     # above we created the ENVI hdr. Now let's write some data into the binary file
 
-    # Let's assume in the neighborhood of Nx*Ny all pixels are
+    # Let's assume in the neighborhood of nx*ny all pixels are
     # similar to the center pixel
-    s = ""
-    for ii in range(Nx * Ny * n_bands * 4 * 8):
-        s += "1"
+    s = "1" * (nx * ny * n_bands * 4 * 8)
 
     bin_array = array("B")
-    bits = s.ljust(n_bands * Nx * Ny * 4 * 8, "0")  # pad it to length n_bands*32
+    bits = s.ljust(n_bands * nx * ny * 4 * 8, "0")  # pad it to length n_bands*32
 
     for octect in re.findall(r"\d{8}", bits):  # split it in 4 octects
         bin_array.append(int(octect[::-1], 2))  # reverse them and append it
@@ -162,19 +157,19 @@ def simulate_bit_mask(Ny, Nx, filename="neighborhood_map"):
 
 
 class BitMask:
-    def __init__(self, Ny, Nx):
+    def __init__(self, ny, nx):
         """A BitMask class
 
         Parameters
         ----------
-        Ny: Number of lines
-        Nx: Number of pixels
+        ny: Number of lines
+        nx: Number of pixels
         """
-        self.Ny = Ny
-        self.Nx = Nx
+        self.ny = ny
+        self.nx = nx
 
     def getbit(self, mask, ii, jj):
-        flat = (ii + self.Ny) * (2 * self.Nx + 1) + jj + self.Nx
+        flat = (ii + self.ny) * (2 * self.nx + 1) + jj + self.nx
         num = flat // 8
         bit = flat % 8
         return (mask[num] >> bit) & 1
@@ -183,8 +178,8 @@ class BitMask:
 def test_bit_mask(filename):
     """Load relevant data for a pixel."""
     ds = gdal.Open(filename, gdal.GA_ReadOnly)
-    Nx = int(ds.GetMetadataItem("HALFWINDOWX"))
-    Ny = int(ds.GetMetadataItem("HALFWINDOWY"))
+    nx = int(ds.GetMetadataItem("HALFWINDOWX"))
+    ny = int(ds.GetMetadataItem("HALFWINDOWY"))
     width = ds.RasterXSize
     bands = ds.RasterCount
     ds = None
@@ -198,14 +193,14 @@ def test_bit_mask(filename):
     mask = fid.read(bands * 4)
     fid.close()
 
-    npix = (2 * Ny + 1) * (2 * Nx + 1)
-    masker = BitMask(Ny, Nx)
+    npix = (2 * ny + 1) * (2 * nx + 1)
+    masker = BitMask(ny, nx)
 
     bitmask = np.zeros(npix, dtype=bool)
     count = 0
     ind = 0
-    for ii in range(-Ny, Ny + 1):
-        for jj in range(-Nx, Nx + 1):
+    for ii in range(-ny, ny + 1):
+        for jj in range(-nx, nx + 1):
             flag = masker.getbit(mask, ii, jj)
             bitmask[ind] = flag == 1
             if flag:
@@ -215,7 +210,7 @@ def test_bit_mask(filename):
     return count
 
 
-def write_slc_stack(neighbor_stack, output_slc_dir, Nx, Ny, dt=12):
+def write_slc_stack(neighbor_stack, output_slc_dir, nx, ny, dt=12):
     os.makedirs(output_slc_dir, exist_ok=False)
 
     nslc = neighbor_stack.shape[0]
@@ -226,23 +221,23 @@ def write_slc_stack(neighbor_stack, output_slc_dir, Nx, Ny, dt=12):
         os.makedirs(slc_dir, exist_ok=False)
         filename = os.path.join(slc_dir, t.strftime("%Y%m%d") + ".slc.full")
         drv = gdal.GetDriverByName("ENVI")
-        ds = drv.Create(filename, Nx, Ny, 1, gdal.GDT_CFloat32)
+        ds = drv.Create(filename, nx, ny, 1, gdal.GDT_CFloat32)
 
-        data = neighbor_stack[ii, :].reshape(Ny, Nx)
+        data = neighbor_stack[ii, :].reshape(ny, nx)
         ds.GetRasterBand(1).WriteArray(data)
         ds = None
 
     return None
 
 
-def write_dummy_geometry(output_dir, Nx, Ny):
+def write_dummy_geometry(output_dir, nx, ny):
     os.makedirs(output_dir, exist_ok=False)
     lat_name = os.path.join(output_dir, "lat.rdr.full")
     lon_name = os.path.join(output_dir, "lon.rdr.full")
-    data = np.ones((Ny, Nx), dtype=np.float64)
+    data = np.ones((ny, nx), dtype=np.float64)
     for filename in [lat_name, lon_name]:
         drv = gdal.GetDriverByName("ENVI")
-        ds = drv.Create(filename, Nx, Ny, 1, gdal.GDT_Float64)
+        ds = drv.Create(filename, nx, ny, 1, gdal.GDT_Float64)
         ds.GetRasterBand(1).WriteArray(data)
         ds = None
 
@@ -290,11 +285,11 @@ def main():
     gamma_inf = 0.99
     Tau0 = 72
     # full neighborhood window size in y direction
-    Ny = 11
+    ny = 11
     # full neighborhood window size in x direction
-    Nx = 11
+    nx = 11
     # number of samples in the neighborhood
-    neighborSamples = Ny * Nx
+    neighbor_samples = ny * nx
 
     # simulate a complex covraince matrix based on the
     # simulated phase and coherence model
@@ -303,9 +298,9 @@ def main():
     )
 
     # simulate a neighborhood of SLCs with size of
-    # neighborSamples for Nt acquisitions
+    # neighbor_samples for Nt acquisitions
     neighbor_stack = simulate_neighborhood_stack(
-        simulated_covariance_matrix, neighborSamples=neighborSamples
+        simulated_covariance_matrix, neighbor_samples=neighbor_samples
     )
 
     # estimate complex covariance matrix from the neighbor stack
@@ -323,7 +318,7 @@ def main():
     #######################
     # write nmap which all the neighbors are self similar with the center pixel
     weight_dataset_name = "neighborhood_map"
-    simulate_bit_mask(Ny, Nx, filename=weight_dataset_name)
+    simulate_bit_mask(ny, nx, filename=weight_dataset_name)
     test_bit_mask(weight_dataset_name)
 
     # output directory to store the simulated data for this unit test
@@ -331,10 +326,10 @@ def main():
     # output subdirectory to store SLCs
     output_slc_dir = os.path.join(output_simulation_dir, "SLC")
     # write flat binary SLCs that Fringe can read
-    write_slc_stack(neighbor_stack, output_slc_dir, Nx, Ny)
+    write_slc_stack(neighbor_stack, output_slc_dir, nx, ny)
     # a dummy geometry directory similar to isce2 results
     output_geometry_dir = os.path.join(output_simulation_dir, "geom_reference")
-    write_dummy_geometry(output_geometry_dir, Nx, Ny)
+    write_dummy_geometry(output_geometry_dir, nx, ny)
 
     # different subdirectories for fringe outputs
     output_timeseries_dir = os.path.join(output_simulation_dir, "timeseries")
@@ -366,8 +361,8 @@ def main():
 
     # read the estimated wrapped phase
     # Pixel of interest is at the center of the neighborhood box
-    x0 = int(Nx / 2)
-    y0 = int(Ny / 2)
+    x0 = int(nx / 2)
+    y0 = int(ny / 2)
     est_wrapped_phase_fringe_evd = read_wrapped_phase(evd_output, x0, y0)
 
     est_wrapped_phase_fringe_mle = read_wrapped_phase(mle_output, x0, y0)
@@ -431,10 +426,10 @@ def main():
     # check the neighborhood map
     count = test_bit_mask(weight_dataset_name)
     print(f"count: {count}")
-    # we have simulated an ideah homogeneous neighborhood of Nx*Ny.
+    # we have simulated an ideah homogeneous neighborhood of nx*ny.
     # Therefore the number of self-similar pixels in the neighborhood
-    # should be Nx*Ny
-    assert count == Nx * Ny
+    # should be nx*ny
+    assert count == nx * ny
 
 if __name__ == "__main__":
 
