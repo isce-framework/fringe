@@ -55,7 +55,7 @@ struct evdOptions
 
 
 //Default constructor
-evdOptions::evdOptions()
+inline evdOptions::evdOptions()
 {
     blocksize = 64;
     memsize = 2048;
@@ -69,7 +69,7 @@ evdOptions::evdOptions()
 
 
 //Command line parser
-int evdOptions::initFromCmdLine(int argc, const char **argv)
+inline int evdOptions::initFromCmdLine(int argc, const char **argv)
 {
 
     args::ArgumentParser parser("Eigen value decomposition of a stack of SLCs");
@@ -162,7 +162,7 @@ int evdOptions::initFromCmdLine(int argc, const char **argv)
 
 
 //Print report
-void evdOptions::print()
+inline void evdOptions::print()
 {
 
     std::cout << "Input Dataset: " << inputDS << std::endl;

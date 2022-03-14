@@ -14,10 +14,7 @@ set(EVD_LIBS    ${ARMADILLO_LIBRARIES}
                 m)
 
 ###Section for cython extension
-set_source_files_properties(
-    evdlib.pyx
-    PROPERTIES CYTHON_IS_CXX TRUE)
-cython_add_module(evdlib evdlib.pyx)
+pybind11_add_module(evdlib evdlib.cpp ${EVD_SRCS})
 target_include_directories(evdlib PUBLIC ${EVD_INCS} .)
 target_link_libraries(evdlib PUBLIC ${EVD_LIBS}) 
 target_link_libraries(evdlib PRIVATE OpenMP::OpenMP_CXX)

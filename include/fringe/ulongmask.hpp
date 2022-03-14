@@ -9,7 +9,7 @@
 //For C98: Unsigned Long was 4 bytes
 //For C11: Unsigned int is 4 bytes
 //Compilation assumes C++11 for now 
-void checkLongSetting()
+inline void checkLongSetting()
 {
 
 //    std::cout << "Size of unsigned int  : " << sizeof(unsigned int) << " bytes \n";
@@ -94,7 +94,7 @@ inline bool Ulongmask::getbit(unsigned int* arr, int ii, int jj) const
 }
 
 //Print mask for debugging
-void Ulongmask::print(unsigned int* arr) const
+inline void Ulongmask::print(unsigned int* arr) const
 {
     //For each row
     for(int ii=-Ny; ii <= Ny; ii++)
