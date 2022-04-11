@@ -1,24 +1,8 @@
-###CMake for building FRInGE
-
-
-###Make sure that symlinks are not being used.
-###From GMT's cmake related files
-get_filename_component (srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
-get_filename_component (bindir "${CMAKE_BINARY_DIR}" REALPATH)
-
-###Minimum cmake version
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
-if (POLICY CMP0048)
-    cmake_policy(SET CMP0048 NEW)
-endif (POLICY CMP0048)
 
-
-option(WITH_CUDA "Set ON|OFF (default=ON) to build CUDA library" OFF)
-
-###Project
 project( FRINGE
          VERSION 0.1
-         LANGUAGES C CXX)
+         LANGUAGES CXX)
 
 ####!!!!-- Checking prerequisites --!!!!
 
@@ -32,7 +16,7 @@ set(CMAKE_CXX_STANDARD 11)
 FIND_PACKAGE(GDAL 3.0 REQUIRED)
 
 ###Find Armadillo
-FIND_PACKAGE(Armadillo REQUIRED)
+FIND_PACKAGE(Armadillo 8.100 REQUIRED)
 
 ###Find openmp
 find_package(OpenMP COMPONENTS CXX)
@@ -41,13 +25,13 @@ find_package(OpenMP COMPONENTS CXX)
 FIND_PACKAGE(LAPACK REQUIRED)
 
 ###Find python3
-FIND_PACKAGE(Python 3.6 COMPONENTS Interpreter Development )
+FIND_PACKAGE(Python 3.7 COMPONENTS Interpreter Development NumPy)
 include(useCython)
+
+find_package(pybind11 REQUIRED)
 
 ###Include FRINGE specific paths
 include (ConfigProject)
-
-FIND_PACKAGE(Numpy REQUIRED)
 
 ####!!!!-- End of checking prerequisites --!!!!
 

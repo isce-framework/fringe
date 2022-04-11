@@ -11,7 +11,7 @@ import os
 import argparse
 import datetime
 import time
-import gdal
+from osgeo import gdal
 import numpy as np
 import fitlib as Fit
 from TimeFunction import TimeFunction

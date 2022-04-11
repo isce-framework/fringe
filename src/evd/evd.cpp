@@ -70,6 +70,26 @@ int evd_process(evdOptions *opts)
     std::cout << "Number of bands = " << nbands << "\n";
 
 
+    //Resolve method and bandwidth
+    if (opts->method.compare("STBAS") == 0)
+    {
+        //If bandwidth is not provided
+        if (opts->bandWidth <= 0)
+        {
+            std::cout << "Requested STBAS but no bandwidth provided \n";
+            GDALDestroyDriverManager();
+            return 101;
+        }
+        else if (opts->bandWidth >= (nbands-1))
+        {
+            std::cout <<"Requested STBAS bandwidth " 
+                      << opts->bandWidth << " is larger than full bandwidth " 
+                      << (nbands-1) << "\n";
+            GDALDestroyDriverManager();
+            return 101;
+        }
+    }
+
     //Open weights file
     wtsDataset = reinterpret_cast<GDALDataset *>( GDALOpenShared( opts->wtsDS.c_str(), GA_ReadOnly));
     if (wtsDataset == NULL)
@@ -483,6 +503,11 @@ int evd_process(evdOptions *opts)
             }
         }
 
+        //Copy method to constant string
+        const std::string method = opts->method;
+        const int BW = opts->bandWidth;
+        const bool isstbas = (method.compare("STBAS") == 0);
+        const bool ismle = (method.compare("MLE") == 0);
 
     #pragma omp parallel for\
         default(shared)
@@ -508,7 +533,6 @@ int evd_process(evdOptions *opts)
             int ymin = std::max(cenii-Ny, 0);
             int ymax = std::min(inysize-1, cenii+Ny);
 
-//            if ((cenii != 82) || (cenjj != 455)) continue;
 
             //Gather data
             int npix = 0;
@@ -541,8 +565,7 @@ int evd_process(evdOptions *opts)
 
             if (npix < 2) continue;     //Minimum number of neighbors
 
-            //std::cout << "Count: " << npix << "\n";
-            //Create coherence matrix
+            //Create coherence matrix - common to all methods
             for (int ti=0; ti <nbands; ti++)
             {
                 for(int tj=ti+1; tj< nbands; tj++)
@@ -555,144 +578,162 @@ int evd_process(evdOptions *opts)
                     Covar.at(ti,tj,threadnum) = res;
                     Covar.at(tj,ti,threadnum) = std::conj(res);
                 }
-                Covar.at(ti,ti,threadnum) = 1.0;
+                Covar.at(ti,ti,threadnum) = std::complex<double>(1.0, 0.0);
             }
 
-           /* std::cout << "coh: " << Covar.at(1,3,threadnum)
-                      << " " << Amp1.at(1,3,threadnum)
-                      << " " << Amp2.at(1,3,threadnum) << "\n"; */
-
-            //Store absolute value in Amp1
-            for (int ti=0; ti<nbands; ti++)
+            if (ismle)
             {
-                for(int tj=ti+1; tj<nbands; tj++)
+                //Store absolute value in Amp1
+                for (int ti=0; ti<nbands; ti++)
                 {
-                    double coh = std::abs( Covar.at(ti,tj,threadnum));
-                    Amp1.at(ti,tj,threadnum) = coh;
-                    Amp1.at(tj,ti,threadnum) = coh;
-                }
-                Amp1.at(ti,ti,threadnum) = 1.0;
-            }
-
-            /*std::cout << "Top \n";
-            Amp1.slice(threadnum)(arma::span(0,4), arma::span(0,4)).raw_print();
-
-            std::cout << "Bottom \n";
-            Amp1.slice(threadnum)(arma::span(nbands-5,nbands-1), arma::span(nbands-5, nbands-1)).raw_print();*/
-
-            //std::cout << "Maximum coherence: " << arma::max( arma::max(Amp1.slice(threadnum))) << "\n";
-
-            bool valid = true;
-            {
-                //Copy covar to amp2
-                Amp2.slice(threadnum) = Covar.slice(threadnum);
-
-                //Check if covariance positive semi definite
-                int status = workers[threadnum].smallestEigen(Amp2.slice_memptr(threadnum), false);
-
-                //std::cout << "COV Eig: " << status << " " << workers[threadnum].eigval[0] << "\n";
-
-                if (status != 0)
-                {
-                    //std::cout << "Covar Eig failed \n";
-                    corr[pp] = -1;
-                    valid = false;
-                }
-                else
-                {
-                    if (workers[threadnum].eigval[0] < 1.0e-6)
+                    for(int tj=ti+1; tj<nbands; tj++)
                     {
-                        //std::cout << "Covar eig: " << workers[threadnum].eigval[0] << "\n";
-                        corr[pp] = -2;
+                        double coh = std::abs( Covar.at(ti,tj,threadnum));
+                        Amp1.at(ti,tj,threadnum) = std::complex<double>(coh, 0.0);
+                        Amp1.at(tj,ti,threadnum) = std::complex<double>(coh, 0.0);
+                    }
+                    Amp1.at(ti,ti,threadnum) = std::complex<double>(1.0, 0.0);
+                }
+
+                bool valid = true;
+                //This is check to see if coherence is numerically well behaved
+                {
+                    //Copy covar to amp2
+                    Amp2.slice(threadnum) = Covar.slice(threadnum);
+
+                    //Check if covariance positive semi definite
+                    int status = workers[threadnum].smallestEigen(Amp2.slice_memptr(threadnum), false);
+                    if (status != 0)
+                    {
+                        corr[pp] = -1;
+                        valid = false;
+                    }
+                    else
+                    {
+                        if (workers[threadnum].eigval[0] < 1.0e-6)
+                        {
+                            corr[pp] = -2;
+                            valid = false;
+                        }
+                    }
+                }
+                if (!valid) continue;   //Skip rest of computation
+
+                //This is check to see if coherence is numerically well behaved
+                {
+                    //Copy coherence to Amp2
+                    Amp2.slice(threadnum) = Amp1.slice(threadnum);
+
+                    //Check if coherence is positive semi-definite
+                    int status = workers[threadnum].smallestEigen(Amp2.slice_memptr(threadnum), false);
+
+                    if (status !=0) 
+                    {
+                        corr[pp] = -3;
+                        valid = false;
+                    }
+                    else
+                    {
+                        if (workers[threadnum].eigval[0] < 1.0e-6)
+                        {
+                            corr[pp] = -4;
+                            valid = false;
+                        }
+                    }
+                }
+                if (!valid) continue;   //Skip rest of computation
+
+                //MLE stuff
+                //We have access to eigenvector as well as Covar here
+                //This is where the iterative MLE solver goes
+                //MLE solver should put solution back into evddata
+
+                //Compute inverse of the coherence matrix here
+                {
+                    //copy coherence to Amp2
+                    Amp2.slice(threadnum) = Amp1.slice(threadnum);
+
+                    //Perform inverse operation
+                    int status = workers[threadnum].positiveDefiniteInverse(Amp2.slice_memptr(threadnum));
+                    if (status != 0)
+                    {
+                        corr[pp] = -5;
                         valid = false;
                     }
                 }
-            }
-            if (!valid) continue;   //Skip rest of computation
+                if (!valid) continue;   //Skip rest of computation
 
-            {
-                //Copy coherence to Amp2
-                Amp2.slice(threadnum) = Amp1.slice(threadnum);
+                //Perform Hadamard product
+                Amp2.slice(threadnum) %= Covar.slice(threadnum);
 
-                //Check if coherence is positive semi-definite
-                int status = workers[threadnum].smallestEigen(Amp2.slice_memptr(threadnum), false);
-                //std::cout << "CORR Eig: "<< status << " " << workers[threadnum].eigval[0] << "\n";
-
-                if (status !=0) 
+                //Obtain the smallest eigen vector
                 {
-                    //std::cout << "Coher eig failed \n";
-                    corr[pp] = -3;
-                    valid = false;
-                }
-                else
-                {
-                    if (workers[threadnum].eigval[0] < 1.0e-6)
+                    int status = workers[threadnum].smallestEigen( Amp2.slice_memptr(threadnum), true);
+                    if (status != 0)
                     {
-                        //std::cout << "Coher Eig: " << workers[threadnum].eigval[0] << "\n";
-                        corr[pp] = -4;
+                        corr[pp] = -6;
                         valid = false;
                     }
-                }
-            }
-            if (!valid) continue;   //Skip rest of computation
-
-
-
-            //MLE stuff
-            //We have access to eigenvector as well as Covar here
-            //This is where the iterative MLE solver goes
-            //MLE solver should put solution back into evddata
-
-            {
-                //copy coherence to Amp2
-                Amp2.slice(threadnum) = Amp1.slice(threadnum);
-
-                //Perform inverse operation
-                int status = workers[threadnum].positiveDefiniteInverse(Amp2.slice_memptr(threadnum));
-                if (status != 0)
-                {
-                    std::cout << "Inverse failed \n";
-                    corr[pp] = -5;
-                    valid = false;
-                }
-            }
-            if (!valid) continue;   //Skip rest of computation
-
-            /*std::cout << "Top Corr Inv\n";
-            Amp2.slice(threadnum)(arma::span(0,4), arma::span(0,4)).raw_print();
-            std::cout << "Bottom Corr Inv \n";
-            Amp2.slice(threadnum)(arma::span(nbands-5,nbands-1), arma::span(nbands-5, nbands-1)).raw_print();*/
-
-            //Perform Hadamard product
-            Amp2.slice(threadnum) %= Covar.slice(threadnum);
-
-            /*std::cout << "Top Hadamard\n";
-            Amp2.slice(threadnum)(arma::span(0,4), arma::span(0,4)).  raw_print();
-            std::cout << "Bottom Hadamard \n";
-            Amp2.slice(threadnum)(arma::span(nbands-5,nbands-1), arma::span(nbands-5, nbands-1)).raw_print();*/
-
-            //Obtain the smallest eigen vector
-            {
-                int status = workers[threadnum].smallestEigen( Amp2.slice_memptr(threadnum), true);
-                if (status != 0)
-                {
-                    corr[pp] = -6;
-                    valid = false;
-                }
-                else
-                {
-                    if (workers[threadnum].eigval[0] < 1.0e-6)
+                    else
                     {
-                        corr[pp] = -7;
-                        valid = false;
+                        if (workers[threadnum].eigval[0] < 1.0e-6)
+                        {
+                            corr[pp] = -7;
+                            valid = false;
+                        }
                     }
                 }
-            }
-            if (!valid) continue;   //Skip updating evddata
+                if (!valid) continue;   //Skip updating evddata
 
-            //std::cout << "Final Eig: " <<  workers[threadnum].eigval[0] << "\n";
+            } //End of MLE
+            else
+            {
+                //This is for STBAS / EVD - which both use the same concept
+                //Largest eigen vector of the correlation matrix
+               
+                //If STBAS, apply bandwidth limits
+                if (isstbas)
+                {
+                    //Blank out covariance entries outside the bandwidth
+                    for (int ti=0; ti <nbands; ti++)
+                    {
+                        for(int tj=ti+BW+1; tj< nbands; tj++)
+                        {
+                            Covar.at(tj,ti,threadnum) = std::complex<double>(0., 0.);
+                            Covar.at(ti,tj,threadnum) = std::complex<double>(0., 0.);
+                        }
+                    }
+                }
 
-            //Extract the smalles eigen vector
+                //Copy covar into amp1 for computation
+                //Need to preserve covar for temporal coherence computation
+                Amp1.slice(threadnum) = Covar.slice(threadnum);
+
+                //Obtain the largest eigen vector
+                bool valid = true;
+                {
+                    int status = workers[threadnum].largestEigen( Amp1.slice_memptr(threadnum), true);
+                    if (status != 0)
+                    {
+                        corr[pp] = -6;
+                        valid = false;
+                    }
+                    else
+                    {
+                        if (workers[threadnum].eigval[0] < 1.0e-6)
+                        {
+                            corr[pp] = -7;
+                            valid = false;
+                        }
+                    }
+                }
+                if (!valid) continue;   //Skip updating evddata
+           
+            } //End of EVD or STBAS
+
+
+            //If we have gotten this far, "eigvec" should contain the solution
+            //For MLE, its from smallestEigen and its largetstEigen for others
             //Ensure first date of acquired SLCs is set to zero
             {
                 std::complex<double> cJ(0.0, 1.0);
@@ -704,11 +745,12 @@ int evd_process(evdOptions *opts)
                 }
 
                 //Ensure that the reference index is exactly 1 - i.e, phase 0
-                evddata.at(pp, miniStackCount-1) = 1.0;
+                evddata.at(pp, miniStackCount-1) = std::complex<float>(1.0, 0.0);
             }
 
-            
-            //compress acquired SLCs of the stack. 
+
+            //compress acquired SLCs of the stack.
+            //This is common to all methods
             //For sequential approach previous compressed SLCs are excluded in the current compression
             {
                 std::complex<double> sumcomp = 0.0;
@@ -720,22 +762,27 @@ int evd_process(evdOptions *opts)
             }            
             
             //This part might need some updating to iterate starting with the eigen value solution
+            //Numerical simulations dont seem to show any impact - but all papers suggest this
 
 
             //Temporal coherence estimation
+            //This is common to all methods
             {
-                std::complex<double> tempcorr = 0.0;
+                std::complex<double> tempcorr(0.0,0.0);
                 std::complex<double> cJ(0.0,1.0);
+                int counter = 0;
                 for(int ti=0; ti<nbands; ti++)
                 {
-                    for(int tj=ti+1; tj<nbands; tj++)
+                    int ulim = isstbas ? (ti+BW+1) : nbands;
+                    for(int tj=ti+1; tj<ulim; tj++)
                     {
                         int ind = ti + nbands * tj;
                     
                         tempcorr += std::exp(cJ * (std::arg(Covar.at(ti,tj,threadnum)) - std::arg( evddata.at(pp,ti)) + std::arg( evddata.at(pp,tj))));
+                        counter++;
                     }
                 }
-                corr.at(pp) = std::abs(tempcorr) * 2.0/ (nbands * (nbands-1.0));
+                corr.at(pp) = std::abs(tempcorr) /(counter * 1.0);
             }
 
         }

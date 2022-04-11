@@ -22,7 +22,8 @@ def cmdLineParse():
             default='geometry', help='Directory with geometry vrts')
     parser.add_argument('-c', '--slcs', dest='outdir', type=str,
             default='slcs', help='Directory with individual slc vrts')
-    parser.add_argument('-b', '--bbox', dest='bbox', nargs='+' , type=int, default=None,
+
+    parser.add_argument('-b', '--bbox', dest='bbox', nargs=4, type=int, default=None, metavar=('Y0','Y1','X0','X1'),
             help='bounding box : minLine maxLine minPixel maxPixel')
 
     inps = parser.parse_args()
@@ -81,8 +82,7 @@ if __name__ == '__main__':
 
         tag = metadata['ACQUISITION_TIME'] 
 
-        vrttmpl='''
-<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
+        vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{height}">
     <VRTRasterBand dataType="CFloat32" band="1" subClass="VRTRawRasterBand">
         <sourceFilename>{PATH}</sourceFilename>
         <ImageOffset>0</ImageOffset>
@@ -159,8 +159,7 @@ if __name__ == '__main__':
 
 
     
-    vrttmpl='''
-<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
+    vrttmpl='''<VRTDataset rasterXSize="{xsize}" rasterYSize="{ysize}">
     <VRTRasterBand dataType="Float64" band="1" subClass="VRTRawRasterBand">
         <SourceFilename>{PATH}</SourceFilename>
         <ImageOffset>0</ImageOffset>

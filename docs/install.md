@@ -5,19 +5,18 @@
 1. cmake (>= 3.14)
 2. C++-11 compatible compiler (gcc >= 5.0)
 3. GDAL (>= 3.x)
-4. Armadillo 
+4. [Armadillo](http://arma.sourceforge.net/) 
 5. Lapack + Blas or similar implementation like openblas
 6. Python (>= 3.7)
 7. Cython
 
 
-### 1.1 OSX with macports
+### 1.1 MacPorts on OSX
 
 ```
 #clang compiler
 > sudo port install clang-8.0
 > sudo port select clang mp-clang-8.0
-
 
 #Python and cython
 > sudo port install python37 py37-cython
@@ -38,7 +37,9 @@ You will also need to install isce2 for using the workflows.
 
 Armadillo installation should also install BLAS + Lapack.
 
-Assuming, you have a C++ compiler that is new enough - the requirements file is as follows:
+Make sure the C++ compiler is new enough, otherwise, install the latest version using [conda](https://docs.conda.io/projects/conda-build/en/latest/resources/compiler-tools.html), i.e. `conda install gxx_linux-64` or `conda install clangxx_osx-64`. The latter will set an env variable `${CXX}` to the installed compiler.
+
+Then the requirements file is as follows:
 
 ```
 cmake
@@ -53,6 +54,7 @@ isce2
 ## 2. Installation Process
 
 ### 2.1 Separate folders
+
 The src, build and install folders need to be separate.
 
 ```
@@ -60,21 +62,27 @@ The src, build and install folders need to be separate.
 ```
 
 ### 2.2 Clone the repo
+
 ```
 > cd src
 > git clone https://github.com/isce-framework/fringe.git
 ```
 
 ### 2.3 Build and install
+
 In the build folder
+
 ```
 > cd build
 
 #On OSX
-> CXX=clang++ cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
+> CXX=clang++ cmake -DCMAKE_FIND_FRAMEWORK=NEVER -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
 
 #On Linux
-> CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=../install  ../src/fringe
+> CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
+
+#If "conda install gxx_linux-64 / clangxx_osx-64"
+> CXX=${CXX} cmake -DCMAKE_INSTALL_PREFIX=../install ../src/fringe
 
 > make all
 > make install

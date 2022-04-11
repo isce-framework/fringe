@@ -1,4 +1,7 @@
 # FRInGE
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e9bacb9410384df98fe86fadc422a9ee)](https://app.codacy.com/gh/isce-framework/fringe?utm_source=github.com&utm_medium=referral&utm_content=isce-framework/fringe&utm_campaign=Badge_Grade_Dashboard)
+
 ------
 
 *Fine Resolution InSAR using Generalized Eigenvectors*

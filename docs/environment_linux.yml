@@ -1,0 +1,16 @@
+name: fringe
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.8,<3.9
+  - pybind11
+  - cmake
+  - cython
+  - gdal
+  - gcc_linux-64
+  - gxx_linux-64
+  - libgcc-ng
+  - libstdcxx-ng
+  - numpy
+  - armadillo
+  

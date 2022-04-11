@@ -6,7 +6,7 @@ import os
 import glob
 import argparse
 import numpy as np
-import gdal
+from osgeo import gdal
 import isce
 import isceobj
 
@@ -32,11 +32,16 @@ def cmdLineParser():
             required=True, help='size of each miniStack')
 
     parser.add_argument('-o', '--outDir', type=str, dest='outDir',
-            required=True, help='output directory')
+            required=False, help='output directory')
 
     parser.add_argument('-u', '--unwrapper_script', type=str, dest='unwrapperScript',
-            default="unwrap_fringe.py", help='unwraper script. e.g., unwrap.py')
+            default="unwrap_fringe.py", help='unwraper script. e.g., unwrap_fringe.py')
+
+    parser.add_argument('--unw_method','--unwrap_method', type=str, dest='unwrapMethod',
+            default='phass', choices=('snaphu','phass'), help='unwrap method.')
     
+    parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
+            required=False, help='path of reference xml file for unwrapping with snaphu')
 
     return parser.parse_args()
 
@@ -173,8 +178,12 @@ if __name__ == '__main__':
         print("coherence: ", coh) 
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m phass -i " + miniStackSlc + " -c " + coh + " -o " + output
-        runf.write(cmd + "\n") 
+        if inps.xmlFile is None:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output
+            runf.write(cmd + "\n")
+        else:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + miniStackSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
+            runf.write(cmd + "\n") 
 
     for k in datumDict.keys():
         print(k)
@@ -185,8 +194,12 @@ if __name__ == '__main__':
         print("coherence: ", coh)
         print("adjusted output phase: ", output)
         print("*****************")
-        cmd = inps.unwrapperScript + " -m phass -i " + datumSlc + " -c " + coh + " -o " + output
-        runf.write(cmd + "\n")
+        if inps.xmlFile is None:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output
+            runf.write(cmd + "\n")
+        else:
+            cmd = inps.unwrapperScript + " -m " + inps.unwrapMethod + " -i " + datumSlc + " -c " + coh + " -o " + output + " -x " + inps.xmlFile
+            runf.write(cmd + "\n")
 
     runf.close()
  

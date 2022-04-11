@@ -6,7 +6,7 @@ import os
 import glob
 import argparse
 import numpy as np
-import gdal
+from osgeo import gdal
 import isce
 import isceobj
 from scipy.interpolate import griddata
@@ -23,6 +23,7 @@ def cmdLineParser(iargs = None):
 
     parser = argparse.ArgumentParser(description = 'integrate PS pixels into existing unwrapped DS filed',
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
     parser.add_argument('-s', '--slc_stack', type=str, dest='slcStack',
             required=True, help='slc stack dataset ')
 
@@ -39,7 +40,13 @@ def cmdLineParser(iargs = None):
             required=True, help='The output directory to store the wrapped phase series of DS and PS pixels')
 
     parser.add_argument('-c', '--coreg_slc_dir', type=str, dest='coregSlcDir',
-            required=True, help='The directory that contains the coregistered stack of SLCs')
+            required=False, help='The directory that contains the coregistered stack of SLCs')
+
+    parser.add_argument('-u', '--unw_method', '--unwrap_method', type=str, dest='unwrapMethod', choices=('snaphu','phass'),
+            help='phase unwrapping method. e.g., snaphu, phass. If enabled, a shell file "run_unwrap_ps_ds.sh" with unwrap command will be created.')
+
+    parser.add_argument('-x', '--xml_file', type=str, dest='xmlFile',
+            required=False, help='path of reference xml file for unwrapping with snaphu')
 
     return parser.parse_args()
 
@@ -93,22 +100,22 @@ def integratePS2DS(dsDS_band_i, dsDS_band_j, dsSlc, dsTcor, psDataset, outDatase
 
     x0 = 0
     xoff = ncols
-    
+
     for block in range(nblocks):
 
-        print("block: ", block)        
+        print("block: ", block)
 
         y0 = block*linesPerBlock
 
         if (y0 + linesPerBlock) > nrows:
-           yoff = nrows - y0
+            yoff = nrows - y0
         else:
-           yoff = linesPerBlock
+            yoff = linesPerBlock
 
         tcorr = dsTcor.ReadAsArray(x0, y0, xoff, yoff)
 
         psPixels = psDataset.ReadAsArray(x0, y0, xoff, yoff)
-        
+
         band_i_DS = dsDS_band_i.ReadAsArray(x0, y0, xoff, yoff)
         band_j_DS = dsDS_band_j.ReadAsArray(x0, y0, xoff, yoff)
 
@@ -119,10 +126,10 @@ def integratePS2DS(dsDS_band_i, dsDS_band_j, dsSlc, dsTcor, psDataset, outDatase
 
         # get the data for PS pixels
         ifgram_ds_ps[psPixels == 1] = ifgram[psPixels == 1]
- 
-        print(ifgram.dtype) 
+
+        print(ifgram.dtype)
         outDataset.GetRasterBand(1).WriteArray(ifgram_ds_ps, x0, y0)
-        
+
     return None
 
 
@@ -139,16 +146,16 @@ def getCoherence(dsTcor, psDataset, outDataset,
         y0 = block*linesPerBlock
 
         if (y0 + linesPerBlock) > nrows:
-           yoff = nrows - y0
+            yoff = nrows - y0
         else:
-           yoff = linesPerBlock
+            yoff = linesPerBlock
 
         tcorr = dsTcor.ReadAsArray(x0, y0, xoff, yoff)
 
         psPixels = psDataset.ReadAsArray(x0, y0, xoff, yoff)
-        
+
         tcorr[psPixels==1] = 0.95
-        
+
         outDataset.GetRasterBand(1).WriteArray(tcorr, x0, y0)
 
     return None
@@ -157,13 +164,13 @@ def getCoherence(dsTcor, psDataset, outDataset,
 def main(iargs=None):
 
     inps = cmdLineParser(iargs)
-   
-    # Open the SLC dataset to read 
+
+    # Open the SLC dataset to read
     dsSlc = gdal.Open(inps.slcStack, gdal.GA_ReadOnly)
-    
+
     # Open the tcorr dataset
     dsTcor = gdal.Open(inps.tcorrFile, gdal.GA_ReadOnly)
-    
+
     # Open the PS pixels dataset
     psDataset = gdal.Open(inps.psPixelsFile, gdal.GA_ReadOnly)
 
@@ -171,7 +178,7 @@ def main(iargs=None):
     nrows = dsSlc.RasterYSize
     ncols = dsSlc.RasterXSize
 
-    print("number of SLC: ", nSlc) 
+    print("number of SLC: ", nSlc)
     print("number of rows: ", nrows)
     print("number of columns: ", ncols)
 
@@ -182,30 +189,23 @@ def main(iargs=None):
     elif (nrows % (nblocks * linesPerBlock) != 0):
         nblocks += 1
 
-    print("nblocks: ", nblocks)        
+    print("nblocks: ", nblocks)
 
     if not os.path.exists(inps.outDir):
         os.makedirs(inps.outDir)
-
-    unwDir = os.path.join(inps.outDir, "unwrap")
-
-    if not os.path.exists(unwDir):
-        os.makedirs(unwDir)
 
     driver = gdal.GetDriverByName("ENVI")
     corName = os.path.join(inps.outDir, "tcorr_ds_ps.bin")
     corDataset = driver.Create(corName, ncols, nrows, 1, gdal.GDT_Float32)
     getCoherence(dsTcor, psDataset, corDataset,
-              ncols, nrows, nblocks, linesPerBlock)
-    corDataset.FlushCache()   
-
+                 ncols, nrows, nblocks, linesPerBlock)
+    corDataset.FlushCache()
 
     # extract the list of the dates
     dateList = []
     for band in range(nSlc):
         date_i =dsSlc.GetRasterBand(band + 1).GetMetadata("slc")["Date"]
         dateList.append(date_i)
-        
     dateList.sort()
 
     # setup a network, compute coherence based on geometry, find min span tree pairs
@@ -220,7 +220,7 @@ def main(iargs=None):
     rangeSpacing = 1.02*29
     coherenceMatrix = networkObj.geometrical_coherence(rangeSpacing, theta, wvl, r)
     networkObj.min_span_tree(coherenceMatrix, 1)
-    
+
     networkObj.plot_network()
     '''
     networkObj.single_master()
@@ -229,15 +229,11 @@ def main(iargs=None):
     for pair in networkObj.pairsDates:
         print(pair)
     print(len(networkObj.pairsDates))
-   
-    # an output script with commands to unwrap interferograms 
-    run_outname = "run_unwrap_ps_ds.sh"
-    runf= open(run_outname,'w')
 
     # loop over all pairs
     for pair in networkObj.pairsDates:
-        
-        date_i = pair.split('-')[0] 
+
+        date_i = pair.split('-')[0]
         date_j = pair.split('-')[1]
 
         band_i = dateList.index(date_i) + 1
@@ -254,22 +250,38 @@ def main(iargs=None):
         dsDS_band_j = gdal.Open(os.path.join(inps.dsStackDir, date_j + ".slc.vrt"), gdal.GA_ReadOnly)
 
         # integrate PS to DS for this pair and write to file block by block
-
         integratePS2DS(dsDS_band_i, dsDS_band_j, dsSlc, dsTcor, psDataset, outDataset,
                        nblocks, linesPerBlock, band_i, band_j)
-        
+
         # close the dataset
         outDataset.FlushCache()
         dsDS_band_i = None
         dsDS_band_j = None
 
-        # write the unwrapping command for this pair
-        unwrapName = os.path.join(unwDir, "{0}_{1}.unw".format(date_i, date_j))
-        cmd = "unwrap_fringe.py -m phass -i " + outName + " -c " + corName + " -o " + unwrapName
-        runf.write(cmd + "\n")
-        
-    runf.close()
+    # write the unwrapping command for this pair
+    if inps.unwrapMethod is not None:
+        # prepare output dir
+        unwDir = os.path.join(inps.outDir, "unwrap")
+        if not os.path.exists(unwDir):
+            os.makedirs(unwDir)
 
+        # an output script with commands to unwrap interferograms
+        run_outname = "run_unwrap_ps_ds.sh"
+        runf= open(run_outname,'w')
+        runf.write("set -e\n")
+
+        for pair in networkObj.pairsDates:
+            date_i = pair.split('-')[0]
+            date_j = pair.split('-')[1]
+            intName = os.path.join(inps.outDir, "{0}_{1}.int".format(date_i, date_j))
+            unwName = os.path.join(unwDir, "{0}_{1}.unw".format(date_i, date_j))
+            if inps.xmlFile is None:
+                cmd = "unwrap_fringe.py -m " + inps.unwrapMethod + " -i " + intName + " -c " + corName + " -o " + unwName
+                runf.write(cmd + "\n")
+            else:
+                cmd = "unwrap_fringe.py -m " + inps.unwrapMethod + " -i " + intName + " -c " + corName + " -o " + unwName + " -x " + inps.xmlFile
+                runf.write(cmd + "\n")
+        runf.close()
 
     dsSLC = None
     dsUnw = None
@@ -281,5 +293,3 @@ if __name__ == '__main__':
     Main driver.
     '''
     main()
-
-

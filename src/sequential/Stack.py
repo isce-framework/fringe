@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import glob
 import os
-import gdal
+import glob
+from osgeo import gdal
+
 
 vrttmpl='''
 <VRTDataset rasterXSize="{width}" rasterYSize="{height}">
@@ -86,6 +87,19 @@ class Stack(object):
 
             print("*****")
             print(slc)
+
+            ## create xml file if missing
+            #if not os.path.isfile(slc+'.xml'):
+            #    cmd = 'gdal2isce_xml.py -i '+slc
+            #    print(cmd)
+            #    os.system(cmd)
+
+            ## fix potential filepath in xml file if dir has been moved.
+            #img = IML.loadImage(slc)[0]
+            #img.filename = slc
+            #img.setAccessMode('READ')
+            #img.renderHdr()
+
             ds = gdal.Open(slc + '.vrt', gdal.GA_ReadOnly)
             width = ds.RasterXSize
             height = ds.RasterYSize

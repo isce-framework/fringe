@@ -1,5 +1,5 @@
 import os
-import gdal
+from osgeo import gdal
 
 
 def extractComplexSource(infile):

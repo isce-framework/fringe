@@ -18,7 +18,7 @@ add_library(unwrap SHARED ${library_sources})
 #set_target_properties(unwrap PROPERTIES COMPILE_FLAGS "-DARMA_EXTRA_DEBUG")
 target_link_libraries(unwrap PUBLIC ${UNWRAP_LIBS})
 target_link_libraries(unwrap PRIVATE OpenMP::OpenMP_CXX)
-target_include_directories(unwrap PUBLIC ${GDAL_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${PYTHON_NUMPY_INCLUDE_DIR})
+target_include_directories(unwrap PUBLIC ${GDAL_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
 
 ###Final installation
 install (TARGETS unwrap

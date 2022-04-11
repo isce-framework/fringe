@@ -6,7 +6,7 @@ import os
 import glob
 import argparse
 import numpy as np
-import gdal
+from osgeo import gdal
 import isce
 import isceobj
 import time
@@ -188,7 +188,7 @@ def adjust_acquisition_wrapped_vrt(miniStackSlc, adjustSlc, output, length, widt
       <SourceFilename>{miniStackSlc}</SourceFilename>
     </SimpleSource>
     <SimpleSource>
-      <SourceFilename >{adjustment}</SourceFilename>
+      <SourceFilename>{adjustment}</SourceFilename>
     </SimpleSource>
   </VRTRasterBand>
 </VRTDataset>'''

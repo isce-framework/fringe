@@ -14,12 +14,19 @@ For full details on the processing approach, see references.
 
 1. For each pixel, a Covariance matrix in time is estimated using the local neighorhood.
 
-2. The Covariance matrix is then used with the MLE Estimator to estimate a wrapped phase for each time-epoch in 3 steps
+2. (MLE) The Covariance matrix is then used with the MLE Estimator to estimate a wrapped phase for each time-epoch in 3 steps
     - Coherence maxtrix is estimated as element-by-element absolute value of covariance matrix
     - The inverse of the coherence matrix is estimated
     - The Hadamard product of the inverse and Covariance matrix is used for further analysis
 
-3. We have not yet implemented iterative improvements to the phase-linking algorithm. For now, we use the phase of the Eigen vector corresponding to the smallest Eigen value as the MLE estimate. Simple tests with Python show that the iterative improvements are fairly minor in most cases.
+
+2. (EVD/ STBAS) In case of STBAS, the bandwidth parameter is used to constrain the Covariance matrix and all entries outside the bands are zeroed out. 
+    - The largest eigen vector of the full covariance (EVD) / banded covariance (STBAS) matrix is estimated
+    - This is nothing but maximization of Rayleigh quotient in Quadratic/Semi-definite programming. Only the phase of the eigen vector is considered similar to MLE.
+
+
+3. We have not yet implemented iterative improvements to the phase-linking algorithm. For now, we use the phase of the Eigen vector of the final decompositio. Simple tests with Python show that the iterative improvements are fairly minor (almost none) in most cases.
+
 
 4. These MLE phase estimates are written out as individual layers. The other related measures like the temporal coherence and compressed SLC are also estimated on a pixel-by-pixel basis and written out.
 
@@ -34,7 +41,7 @@ For full details on the processing approach, see references.
 
 4. For Hermitian matrix inverse, we use [zportf](http://www.netlib.org/lapack/explore-3.1.1-html/zpotrf.f.html) followed by [zpotri](http://www.netlib.org/lapack/explore-3.1.1-html/zpotri.f.html).
 
-5. All the symbol bindings can be found under [include/fringe/EigenLapack.hpp](../../../include/cstamps/EigenLapack.hpp) in the code base. 
+5. All the symbol bindings can be found under [include/fringe/EigenLapack.hpp](../../../include/fringe/EigenLapack.hpp) in the code base. 
 
 6. EVD will need to be linked against lapack and blas/f77blas. On OS X, we rely on atlas to provide these packages. On linux, we have tested this with conda. 
 
@@ -52,17 +59,17 @@ For full details on the processing approach, see references.
 
 1. Ansari, H., De Zan, F., Adam, N., Goel, K., & Bamler, R. (2016, July). Sequential estimator for distributed scatterer interferometry. In Geoscience and Remote Sensing Symposium (IGARSS), 2016 IEEE International (pp. 6859-6862). IEEE.
 
-2. Ansari, H., De Zan, F., & Bamler, R. (2017). Sequential Estimator- A Proposal for High-Precision and Efficient Earth Deformation Monitoring with InSAR [FRINGE 2017 Presentation](http://fringe.esa.int/files/presentation324.pdf) 
-
+2. Ansari, H., De Zan, F., & Bamler, R. (2017). Sequential Estimator- A Proposal for High-Precision and Efficient Earth Deformation Monitoring with InSAR [FRINGE 2017 Presentation](http://fringe2017.esa.int/files/presentation324.pdf) 
 
 3. A. Monti Guarnieri and S. Tebaldini, “On the Exploitation of Target Statistics for SAR Interferometry Applications,” IEEE Trans. Geosci. Remote Sens., vol. 46, no. 11, pp. 3436–3443, Nov. 2008.
 
-4. A. M. Guarnieri and S. Tebaldini, “Hybrid Cramér-Rao Bounds for Crustal Displacement Field Estimators in SAR Interferometry,” IEEE Signal Process. Lett., vol. 14, no. 12, pp. 1012–1015, Dec. 2007.
+4. A. M. Guarnieri and S. Tebaldini, “Hybrid Cramér-Rao Bounds for Crustal Displacement Field Estimators in SAR Interferometry,” IEEE Signal Process. Lett., vol. 14, no. 12, pp. 1012–1015, Dec. 2007.
 
 5. A. Ferretti, A. Fumagalli, F. Novali, C. Prati, F. Rocca, and A. Rucci, “A New Algorithm for Processing Interferometric Data-Stacks: SqueeSAR,” IEEE Trans. Geosci. Remote Sens., vol. 49, no. 9, pp. 3460–3470, Sep. 2011.
 
 6. Y. Wang and X. X. Zhu, “Robust Estimators for Multipass SAR Interferometry,” IEEE Trans. Geosci. Remote Sens., vol. 54, no. 2, pp. 968–980, Feb. 2016.
 
+7. Ansari, Homa; De Zan, Francesco; Parizzi, Alessandro (2020): Study of Systematic Bias in Measuring Surface Deformation with SAR Interferometry. TechRxiv. Preprint. https://doi.org/10.36227/techrxiv.11672532.v1.
 
 ## evd.py 
 
@@ -92,41 +99,19 @@ optional arguments:
                         Half window size (range) (default: 5)
   -y HALFWINDOWY, --yhalf HALFWINDOWY
                         Half window size (azimuth) (default: 5)
-  -m MINNEIGHBORS, --minneigh MINNEIGHBORS
-                        Minimum number of neighbors for computation (default:
-                        5)
-```
-
-
-
-## evd
-
-C++ based executable. Not much error checking of inputs.
-
-```
-  evd {OPTIONS}
-
-    Eigen value decomposition of a stack of SLCs
-
-  OPTIONS:
-
-      -h, --help                        Display this help menu
-      -i[inputDS*]                      Input Stack VRT
-      -w[wtsDS*]                        Input neighbor mask
-      -o[output*]                       Output folder for new stack
-      -l[linesperblock]                 Lines per block for processing
-      -r[memorysize]                    Memory in Mb
-      -x[xsize]                         Half window in x
-      -y[ysize]                         Half window in y
-      -n[minNeighbors]                  Minimum number of neighbors
-```
-
-
-Note that I often have to call the executable as shown below on conda-based environments:
+  -n MINNEIGHBORS, --minneigh MINNEIGHBORS
+                        Minimum number of neighbors
+                        for computation (default: 5)
+  -m METHOD, --method METHOD
+                        Decomposition method to use -
+                        MLE / EVD / STBAS (default:
+                        MLE)
+  -b BANDWIDTH, --bandwidth BANDWIDTH
+                        Diagonal bandwidth for STBAS
+                        (default: -1)
 
 ```
-> OPENBLAS_NUM_THREADS=1 LD_LIBRARY_PATH=$LD_RUN_PATH evd
-```
+
 
 ### evdtest.py
 

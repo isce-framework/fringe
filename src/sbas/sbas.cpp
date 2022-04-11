@@ -404,7 +404,7 @@ void process(sbasOptions *opts)
     if (opts->estimateDEMError)
     {
         incDataset = reinterpret_cast<GDALDataset*>(GDALOpen( opts->incAngleFile.c_str(), GA_ReadOnly));
-        if ((incDataset == NULL))
+        if (incDataset == NULL)
         {
             std::cout << "Cannot open file { " << opts->incAngleFile << "} for reading. \n";
             for (int jj=0; jj < opts->nPairs; jj++)
