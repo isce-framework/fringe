@@ -18,7 +18,8 @@ class ParseKwargs(argparse.Action):
             getattr(namespace, self.dest)[key] = value
 
 def cmdLineParser():
-    ''' Command Line Parser
+    '''
+    Command Line Parser
     Script to use Phass/Snaphu in the isce3 environment
 
     USAGE:
@@ -78,10 +79,10 @@ GDAL2ISCE = {
     }
 
 def write_vrt(infile, width, length, dtype):
-    ## infile :: str    path to inputfile
+    ## infile :: str  path to inputfile
     
     infile_dir  = os.path.dirname(os.path.abspath(infile))
-
+    
     vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{length}">
     <VRTRasterBand dataType="{DTYPE}" band="1" subClass="VRTRawRasterBand">
         <SourceFilename relativeToVRT="1">{PATH}</SourceFilename>
