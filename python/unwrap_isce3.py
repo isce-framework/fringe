@@ -8,10 +8,9 @@ import argparse
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import isce3
-from isce3.unwrap import snaphu
-from isce3.unwrap import Phass
-from isce3.io.gdal import Raster as gRaster # Snaphu module takes isce3.io.gdal.Raster inputs
+from isce3.unwrap import snaphu, Phass
 from isce3.io import Raster # Phass module takes isce3.io.Raster inputs
+from isce3.io.gdal import Raster as gRaster # Snaphu module takes isce3.io.gdal.Raster inputs
 
 class ParseKwargs(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -21,8 +20,8 @@ class ParseKwargs(argparse.Action):
             getattr(namespace, self.dest)[key] = value
 
 def cmdLineParser():
-    
     '''
+
     Command Line Parser
     Script to use Phass/Snaphu in the isce3 environment
 
@@ -278,7 +277,7 @@ def unwrap_phass(infile, corr_file, unw_filename, conncomp_filename,
 
 def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None, cost_mode='defo',
                   nlooks=1, tile_nrows=1, tile_ncols=1, row_overlap=0, col_overlap=0, tile_cost_thresh=500,
-                  min_region=100,nproc=1, single_tile_opt=False, defo_thresh=1.25, print_msg=True):
+                  min_region=100, nproc=1, single_tile_opt=False, defo_thresh=1.25, print_msg=True):
 
     '''
     Unwrap wrapped interferogram using Snaphu
@@ -379,6 +378,10 @@ if __name__ == '__main__':
     write_vrt(inps.correlation, corr.width, corr.length, corr.datatype.value)
     inps.correlation = os.path.abspath(inps.correlation + '.vrt')
 
+    # Check if output folder exists
+    if not os.path.exists(inps.outputDir):
+        os.makedirs(inps.outputDir)
+
     ################################ Set-up and Unwrap #############################
     if inps.unwrapper == 'phass':
         corr_thresh = 0.3
@@ -422,8 +425,8 @@ if __name__ == '__main__':
             if 'tile_cost_thresh' in inps.kwargs:
                 tile_cost_thresh = float(inps.kwargs['tile_cost_thresh'])
 
-        unwrap_snaphu(inps.igram + '.vrt', inps.correlation, unw_output, conncomp_output, mask = inps.mask, nlooks=nlooks, 
-                      tile_nrows=tiles[0], tile_ncols=tiles[1], row_overlap=tiles[2], col_overlap=tiles[3], min_region=min_region, 
+        unwrap_snaphu(inps.igram + '.vrt', inps.correlation, unw_output, conncomp_output, mask = inps.mask, nlooks=nlooks,
+                      tile_nrows=tiles[0], tile_ncols=tiles[1], row_overlap=tiles[2], col_overlap=tiles[3], min_region=min_region,
                       nproc=nproc, single_tile_opt=single_tile_opt, defo_thresh=defo_thresh, tile_cost_thresh=tile_cost_thresh)
 
     ################################ Write output vrt and xml file #############################
