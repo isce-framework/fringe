@@ -6,7 +6,6 @@
 import os
 import argparse
 import isce3
-import numpy as np
 from isce3.io.gdal import Raster
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
@@ -19,8 +18,7 @@ class ParseKwargs(argparse.Action):
             getattr(namespace, self.dest)[key] = value
 
 def cmdLineParser():
-    '''
-    Command Line Parser
+    ''' Command Line Parser
     Script to use Phass/Snaphu in the isce3 environment
 
     USAGE:
@@ -29,10 +27,10 @@ def cmdLineParser():
     unwrap_isce3.py -i 20190610_20190716.int -c tcorr_ds_ps.bin -k corr_thresh=0.3, good_corr=0.7 min_region=200
 
     Snaphu:
-    unwrap_isce3.py -i 20190610_20190716.int -c tcorr_ds_ps.bin -u snaphu -k nlooks=27 tiles=[4,4,500,500] nproc=8 min_region=200  
+    unwrap_isce3.py -i 20190610_20190716.int -c tcorr_ds_ps.bin -u snaphu -k nlooks=27 tiles=[4,4,500,500] nproc=8 min_region=200
     '''
-    unw_options = ''' phass  ::  corr_thresh=0.3, good_corr=0.7, min_region=200, \n 
-    snaphu :: nlooks=1, tiles=[1, 1, 0, 0], min_region=200, nproc=1, single_tile_opt=False   '''
+    unw_options = ''' phass  ::  corr_thresh=0.3, good_corr=0.7, min_region=200, \n
+    snaphu :: nlooks=1, tiles=[1, 1, 0, 0], min_region=200, nproc=1, single_tile_opt=False '''
 
     parser = argparse.ArgumentParser(description='Phass Unwrapper', formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-i', '--interferogram_file', type=str, dest='igram',
@@ -41,9 +39,9 @@ def cmdLineParser():
                         required=True, help='Input correlation file, example: tcorr_ds_ps.bin')
     parser.add_argument('-m', '--mask', type=str, dest='mask', default=None,
                         help='Input mask byte file')
-    parser.add_argument('-o', '--output_dir', type=str, dest='outputDir', 
+    parser.add_argument('-o', '--output_dir', type=str, dest='outputDir',
                         default='./', help='Output directory path')
-    parser.add_argument('-u', '--unwrapper', type=str, dest='unwrapper', 
+    parser.add_argument('-u', '--unwrapper', type=str, dest='unwrapper',
                         default='phass', help='Unwrapper method: phass/snaphu')
     parser.add_argument('-k', '--kwargs', type=str, dest='kwargs', nargs='*',
                         help=unw_options, action=ParseKwargs)
@@ -121,7 +119,6 @@ def component_xml(root, name, size, doc):
     property_xml(coord, 'startingvalue', '0.0', 'Starting value of the coordinate.')
 
 def write_xml(infile, width, length, bands, datatype, scheme):
-
     root = ET.Element('imageFile')
     property_xml(root, 'access_mode', 'READ', 'Image access mode.')
     property_xml(root, 'byte_order', 'l', 'Endianness of the image.')
@@ -163,7 +160,7 @@ def vrt_cpx2rad(infile, width, length, stype):
     Function to extract interferogram phase from complex file
     needed when unwrapping interferogram in radians.
     
-    Find the input interferogram dtype, if complex32 or complex64 
+    Find the input interferogram dtype, if complex32 or complex64
     reate vrt file that extract phase values onthefly
 
     Input:
@@ -215,9 +212,9 @@ def vrt_cpx2rad(infile, width, length, stype):
     # Return the path to VRT file as input to Phass
     return outfile
 
-def unwrap_phass(infile, corr_file, unw_filename, conncomp_filename, 
+def unwrap_phass(infile, corr_file, unw_filename, conncomp_filename,
                  correlation_threshold=0.3, good_correlation=0.7, min_region=200, print_msg=True):
-    ''' 
+    '''
     Unwrap wrapped interferogram [in radians] using Phass
     
     Input:
@@ -239,14 +236,14 @@ def unwrap_phass(infile, corr_file, unw_filename, conncomp_filename,
 
     phass = Phass()
     
-    # If input interferogram is in COMPLEX format, create .vrt file 
+    # If input interferogram is in COMPLEX format, create .vrt file
     # to get interferogram phase in radians on-the-fly
     infile_name = infile
     infile = Raster(infile)
     phass_input = vrt_cpx2rad(infile_name, infile.width, infile.length, infile.datatype())
 
     # Input files
-    igram = Raster(phass_input) 
+    igram = Raster(phass_input)
     correlation = Raster(corr_file)
 
     # Output files
@@ -261,7 +258,7 @@ def unwrap_phass(infile, corr_file, unw_filename, conncomp_filename,
     if print_msg:
         print('\nPhass Unwrapping:')
         print('Input:')
-        print('  Phase: {}'.format(os.path.abspath(phase_input)))
+        print('  Phase: {}'.format(os.path.abspath(phass_input)))
         print('        width: {}, length {}, dtype: {}'.format(igram.width, igram.length, GDAL_DATATYPE[igram.datatype()]))
         print('  Correlation: {}'.format(os.path.abspath(corr_file)))
         print('        width: {}, length {}, dtype: {}'.format(correlation.width, correlation.length, GDAL_DATATYPE[correlation.datatype()]))
@@ -296,7 +293,7 @@ def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
         tiles                 :: list   [tile_nrows, tile_ncols, row_overlap, col_overlap]
                                         tile_nrows, tile_ncols   - Number of tiles along the row/column directions
                                         row_overlap, col_overlap - verlap, in number of rows/columns, between neighboring tiles
-        tile_cost_thresh      :: int    Cost threshold to use for determining boundaries of reliable regions. 
+        tile_cost_thresh      :: int    Cost threshold to use for determining boundaries of reliable regions.
                                         Larger cost threshold implies smaller regions (safer, but more expensive computationally
         min_region            :: int    Minimum number of pixels per region (connected component)
         nproc                 :: int    Number of threads for parallel processing (use with tiles)
@@ -312,7 +309,7 @@ def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
     from isce3.unwrap import snaphu
     
     # Input file
-    igram = Raster(infile) 
+    igram = Raster(infile)
     correlation = Raster(corr_file)
     
     if mask:
@@ -333,7 +330,7 @@ def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
 
     cost_params = None
     solver_params = None
-    init_method = 'mcf' #not yet included in the isce3.unwrap.snaphu
+    #init_method = 'mcf' #not yet included in the isce3.unwrap.snaphu
     pwr = None
     unwest = None
     
@@ -369,9 +366,7 @@ def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
 ####################################################################################
 if __name__ == '__main__':
 
-    ''' 
-    Main driver
-    '''
+    # Main driver
 
     inps = cmdLineParser()
 
@@ -403,10 +398,10 @@ if __name__ == '__main__':
                      correlation_threshold=corr_thresh, good_correlation=good_corr, min_region=min_region)
 
     elif inps.unwrapper == 'snaphu':
-        nlooks = 27 
+        nlooks = 27
         tiles = [1,1,0,0]
         min_region = 200
-        nproc = 1 
+        nproc = 1
         single_tile_opt = False
 
         if inps.kwargs:
