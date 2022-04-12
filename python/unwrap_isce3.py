@@ -338,7 +338,7 @@ def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
     unwest = None
     
     phase_stddev_model_params = None
-    scratchdir = ./
+    scratchdir = './'
     verbose = print_msg
     debug = False
 
