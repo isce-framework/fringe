@@ -5,10 +5,13 @@
 
 import os
 import argparse
-import isce3
-from isce3.io.gdal import Raster
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+import isce3
+from isce3.unwrap import snaphu
+from isce3.unwrap import Phass
+from isce3.io.gdal import Raster as gRaster # Snaphu module takes isce3.io.gdal.Raster inputs
+from isce3.io import Raster # Phass module takes isce3.io.Raster inputs
 
 class ParseKwargs(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -18,6 +21,7 @@ class ParseKwargs(argparse.Action):
             getattr(namespace, self.dest)[key] = value
 
 def cmdLineParser():
+    
     '''
     Command Line Parser
     Script to use Phass/Snaphu in the isce3 environment
@@ -80,7 +84,6 @@ GDAL2ISCE = {
 
 def write_vrt(infile, width, length, dtype):
     ## infile :: str  path to inputfile
-    
     infile_dir  = os.path.dirname(os.path.abspath(infile))
     
     vrttmpl='''<VRTDataset rasterXSize="{width}" rasterYSize="{length}">
@@ -116,7 +119,7 @@ def component_xml(root, name, size, doc):
     property_xml(coord, 'endingvalues', str(float(size)), 'Ending value of the coordinate.')
     property_xml(coord, 'family', 'imagecoordinate', 'Instance family name.')
     property_xml(coord, 'name', 'imagecoordinate_name', 'Instance name.')
-    property_xml(coord, 'size', str(width), 'Coordinate size.')
+    property_xml(coord, 'size', str(size), 'Coordinate size.')
     property_xml(coord, 'startingvalue', '0.0', 'Starting value of the coordinate.')
 
 def write_xml(infile, width, length, bands, datatype, scheme):
@@ -125,7 +128,7 @@ def write_xml(infile, width, length, bands, datatype, scheme):
     property_xml(root, 'byte_order', 'l', 'Endianness of the image.')
     component_xml(root, 'coordinate1', width, 'First coordinate of a 2D image (width).')
     component_xml(root, 'coordinate2', length, 'Second coordinate of a 2D image (length).')
-    property_xml(root, 'data_type', GDAL2ISCE[dtype], 'Image data type.')
+    property_xml(root, 'data_type', GDAL2ISCE[datatype], 'Image data type.')
     property_xml(root, 'family', 'image', 'Instance family name.')
     property_xml(root, 'file_name', os.path.abspath(infile), 'Name of the image file.')
     property_xml(root, 'length', str(length), 'Image length.')
@@ -231,10 +234,7 @@ def unwrap_phass(infile, corr_file, unw_filename, conncomp_filename,
         unw_igram   :: Raster, Unwrapped interferogram, type: isce3.io.Raster
         conn_comp   :: Raster, Connected component labels, type: isce3.io.Raster
     '''
-
-    from isce3.io import Raster # Phass module takes isce3.io.Raster inputs
-    from isce3.unwrap import Phass
-
+    
     phass = Phass()
     
     # If input interferogram is in COMPLEX format, create .vrt file
@@ -276,9 +276,9 @@ def unwrap_phass(infile, corr_file, unw_filename, conncomp_filename,
         print('  Connected components: {}'.format(os.path.abspath(conncomp_filename)))
         print('        width: {}, length {}, dtype: {}'.format(conn_comp.width, conn_comp.length, GDAL_DATATYPE[conn_comp.datatype()]))
 
-def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
-                  cost_mode='defo', nlooks=1, tiles=[1,1,0,0], tile_cost_thresh=500, min_region=100,
-                  nproc=1, single_tile_opt=False, defo_thresh=1.25, print_msg=True):
+def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None, cost_mode='defo',
+                  nlooks=1, tile_nrows=1, tile_ncols=1, row_overlap=0, col_overlap=0, tile_cost_thresh=500,
+                  min_region=100,nproc=1, single_tile_opt=False, defo_thresh=1.25, print_msg=True):
 
     '''
     Unwrap wrapped interferogram using Snaphu
@@ -291,9 +291,10 @@ def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
         mask                  :: str    Binary mask of valid pixels. Zeros in this raster indicate interferogram
                                         pixels that should be masked out, GDT_Byte datatype
         nlooks                :: float  Effective number of looks used to form the input correlation data
-        tiles                 :: list   [tile_nrows, tile_ncols, row_overlap, col_overlap]
-                                        tile_nrows, tile_ncols   - Number of tiles along the row/column directions
-                                        row_overlap, col_overlap - verlap, in number of rows/columns, between neighboring tiles
+        tile_nrows            :: int    Number of tiles along the row directions
+        tile_ncols            :: int    Number of tiles along the column directions
+        row_overlap           :: int    Overlap in number of rows between neighboring tiles
+        col_overlap           :: int    Overlap in number of columns between neighboring tiles
         tile_cost_thresh      :: int    Cost threshold to use for determining boundaries of reliable regions.
                                         Larger cost threshold implies smaller regions (safer, but more expensive computationally
         min_region            :: int    Minimum number of pixels per region (connected component)
@@ -306,24 +307,21 @@ def unwrap_snaphu(infile, corr_file, unw_filename, conncomp_filename, mask=None,
         conn_comp   :: Raster, Connected component labels, type: isce3.io.Raster
     '''
 
-    from isce3.io.gdal import Raster # Snaphu module takes isce3.io.gdal.Raster inputs
-    from isce3.unwrap import snaphu
-    
     # Input file
-    igram = Raster(infile)
-    correlation = Raster(corr_file)
+    igram = gRaster(infile)
+    correlation = gRaster(corr_file)
     
     if mask:
         print('Using mask file {}'.format(mask))
-        mask = Raster(mask)
+        mask = gRaster(mask)
 
     # Output file
-    unw_igram = Raster(unw_filename, igram.width, igram.length, isce3.io.gdal.GDT_Float32, "ENVI") #works also with ISCE format
-    conn_comp = Raster(conncomp_filename, igram.width, igram.length, isce3.io.gdal.GDT_UInt32, "ENVI")
+    unw_igram = gRaster(unw_filename, igram.width, igram.length, isce3.io.gdal.GDT_Float32, "ENVI") #works also with ISCE format
+    conn_comp = gRaster(conncomp_filename, igram.width, igram.length, isce3.io.gdal.GDT_UInt32, "ENVI")
     
     # Snaphu parameters
-    tiling_params = snaphu.TilingParams(nproc=nproc, tile_nrows=tiles[0], tile_ncols=tiles[1],
-                            row_overlap=tiles[2], col_overlap=tiles[3], tile_cost_thresh=tile_cost_thresh,
+    tiling_params = snaphu.TilingParams(nproc=nproc, tile_nrows=tile_nrows, tile_ncols=tile_ncols,
+                            row_overlap=row_overlap, col_overlap=col_overlap, tile_cost_thresh=tile_cost_thresh,
                             min_region_size=min_region, single_tile_reoptimize=single_tile_opt)
 
     conncomp_params = snaphu.ConnCompParams()
@@ -377,7 +375,7 @@ if __name__ == '__main__':
     conncomp_output = os.path.join(inps.outputDir, input_name + '_int.conn')
 
     # Need gdal vrt file to read correctly the tcorr_ds_ps.bin format
-    corr = Raster(inps.correlation)
+    corr = gRaster(inps.correlation)
     write_vrt(inps.correlation, corr.width, corr.length, corr.datatype.value)
     inps.correlation = os.path.abspath(inps.correlation + '.vrt')
 
@@ -404,6 +402,8 @@ if __name__ == '__main__':
         min_region = 200
         nproc = 1
         single_tile_opt = False
+        defo_thresh = 1.25
+        tile_cost_thresh = 500
 
         if inps.kwargs:
             if 'nlooks' in inps.kwargs:
@@ -417,17 +417,16 @@ if __name__ == '__main__':
                 nproc = int(inps.kwargs['nproc'])
             if 'single_tile_opt' in inps.kwargs:
                 single_tile_opt = int(inps.kwargs['single_tile_opt'])
+            if 'defo_thresh' in inps.kwargs:
+                defo_thresh = float(inps.kwargs['defo_thresh'])
+            if 'tile_cost_thresh' in inps.kwargs:
+                tile_cost_thresh = float(inps.kwargs['tile_cost_thresh'])
 
-        unwrap_snaphu(inps.igram + '.vrt', inps.correlation, unw_output, conncomp_output, mask = inps.mask,
-                     nlooks=nlooks, tiles=tiles, min_region=min_region, nproc=nproc, single_tile_opt=single_tile_opt)
+        unwrap_snaphu(inps.igram + '.vrt', inps.correlation, unw_output, conncomp_output, mask = inps.mask, nlooks=nlooks, 
+                      tile_nrows=tiles[0], tile_ncols=tiles[1], row_overlap=tiles[2], col_overlap=tiles[3], min_region=min_region, 
+                      nproc=nproc, single_tile_opt=single_tile_opt, defo_thresh=defo_thresh, tile_cost_thresh=tile_cost_thresh))
 
     ################################ Write output vrt and xml file #############################
 
     unw_vrt_xml(unw_output, "BIL")
     unw_vrt_xml(conncomp_output, "BIP")
-
-
-
-
-
-
