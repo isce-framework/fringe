@@ -424,7 +424,7 @@ if __name__ == '__main__':
 
         unwrap_snaphu(inps.igram + '.vrt', inps.correlation, unw_output, conncomp_output, mask = inps.mask, nlooks=nlooks, 
                       tile_nrows=tiles[0], tile_ncols=tiles[1], row_overlap=tiles[2], col_overlap=tiles[3], min_region=min_region, 
-                      nproc=nproc, single_tile_opt=single_tile_opt, defo_thresh=defo_thresh, tile_cost_thresh=tile_cost_thresh))
+                      nproc=nproc, single_tile_opt=single_tile_opt, defo_thresh=defo_thresh, tile_cost_thresh=tile_cost_thresh)
 
     ################################ Write output vrt and xml file #############################
 
