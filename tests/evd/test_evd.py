@@ -182,8 +182,6 @@ def test_bit_mask(filename):
 
     masker = BitMask(ny, nx)
 
-    wy, wx = (2 * ny + 1), (2 * nx + 1)
-    npix = wx * wy
     count = 0
     for ii in range(-ny, ny + 1):
         for jj in range(-nx, nx + 1):
