@@ -114,21 +114,11 @@ def simulate_bit_mask(ny, nx, filename="neighborhood_map"):
 
     # number of uint32 bytes needed to store weights
     number_of_bytes = np.ceil((ny * nx) / 32)
-
-    flags = np.ones((ny, nx), dtype=np.bool_)
-    flag_bits = np.zeros((ny, nx), dtype=np.uint8)
-
-    for ii in range(ny):
-        for jj in range(nx):
-            flag_bits[ii, jj] = flags[ii, jj].astype(np.uint8)
-
-    # create the weight dataset for 1 neighborhood
-    cols = nx
-    rows = ny
+    # create the weight dataset for 1 neighborhood (a single pixel)
     n_bands = int(number_of_bytes)
     drv = gdal.GetDriverByName("ENVI")
     options = ["INTERLEAVE=BIP"]
-    ds = drv.Create(filename, cols, rows, n_bands, gdal.GDT_UInt32, options)
+    ds = drv.Create(filename, 1, 1, n_bands, gdal.GDT_UInt32, options)
 
     half_window_y = int(ny / 2)
     half_window_x = int(nx / 2)
@@ -142,11 +132,11 @@ def simulate_bit_mask(ny, nx, filename="neighborhood_map"):
 
     # Let's assume in the neighborhood of nx*ny all pixels are
     # similar to the center pixel
-    s = "1" * (nx * ny * n_bands * 4 * 8)
+    s = "1" * nx * ny
+
+    bits = s.ljust(n_bands * 4 * 8, "0")  # pad it to length n_bands*32
 
     bin_array = array("B")
-    bits = s.ljust(n_bands * nx * ny * 4 * 8, "0")  # pad it to length n_bands*32
-
     for octect in re.findall(r"\d{8}", bits):  # split it in 4 octects
         bin_array.append(int(octect[::-1], 2))  # reverse them and append it
 
