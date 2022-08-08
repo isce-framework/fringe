@@ -110,18 +110,18 @@ def estimate_evd(cov_mat):
     return evd_estimate
 
 
-def simulate_bit_mask(ny, nx, filename="neighborhood_map"):
+def simulate_bit_mask(wy, wx, filename="neighborhood_map"):
 
     # number of uint32 bytes needed to store weights
-    number_of_bytes = np.ceil((ny * nx) / 32)
+    number_of_bytes = np.ceil((wy * wx) / 32)
     # create the weight dataset for 1 neighborhood (a single pixel)
     n_bands = int(number_of_bytes)
     drv = gdal.GetDriverByName("ENVI")
     options = ["INTERLEAVE=BIP"]
     ds = drv.Create(filename, 1, 1, n_bands, gdal.GDT_UInt32, options)
 
-    half_window_y = int(ny / 2)
-    half_window_x = int(nx / 2)
+    half_window_y = int(wy / 2)
+    half_window_x = int(wx / 2)
 
     ds.SetMetadata(
         {"HALFWINDOWX": str(half_window_x), "HALFWINDOWY": str(half_window_y)}
@@ -130,9 +130,10 @@ def simulate_bit_mask(ny, nx, filename="neighborhood_map"):
 
     # above we created the ENVI hdr. Now let's write some data into the binary file
 
-    # Let's assume in the neighborhood of nx*ny all pixels are
-    # similar to the center pixel
-    s = "1" * nx * ny
+    # Let's assume in the neighborhood of wx*wy all pixels are
+    # similar to the center pixel, except the top left (first one)
+    s = "1" * wx * wy
+    s = "0" + s[1:]
 
     bits = s.ljust(n_bands * 4 * 8, "0")  # pad it to length n_bands*32
 
@@ -152,8 +153,8 @@ class BitMask:
 
         Parameters
         ----------
-        ny: Number of lines
-        nx: Number of pixels
+        ny: Half window size in y
+        nx: Half window size in x
         """
         self.ny = ny
         self.nx = nx
@@ -162,6 +163,7 @@ class BitMask:
         flat = (ii + self.ny) * (2 * self.nx + 1) + jj + self.nx
         num = flat // 8
         bit = flat % 8
+        # print(f"{ii = }, {jj = }, {flat = }, {num = }, {bit = }, {mask[num] = }")
         return (mask[num] >> bit) & 1
 
 
@@ -170,22 +172,18 @@ def test_bit_mask(filename):
     ds = gdal.Open(filename, gdal.GA_ReadOnly)
     nx = int(ds.GetMetadataItem("HALFWINDOWX"))
     ny = int(ds.GetMetadataItem("HALFWINDOWY"))
-    width = ds.RasterXSize
     bands = ds.RasterCount
     ds = None
 
-    # we have only one neighborhood around one pixel
-    line = 5
-    pixel = 5
+    # we have only one neighborhood around one pixel, so
+    # all bits are at the opening of the file
+    with open(filename, "rb") as f:
+        mask = f.read(bands * 4)
 
-    fid = open(filename, "rb")
-    fid.seek((line * width + pixel) * bands * 4)
-    mask = fid.read(bands * 4)
-    fid.close()
-
-    npix = (2 * ny + 1) * (2 * nx + 1)
     masker = BitMask(ny, nx)
 
+    wy, wx = (2 * ny + 1), (2 * nx + 1)
+    npix = wx * wy
     bitmask = np.zeros(npix, dtype=bool)
     count = 0
     ind = 0
@@ -309,7 +307,8 @@ def main():
     # write nmap which all the neighbors are self similar with the center pixel
     weight_dataset_name = "neighborhood_map"
     simulate_bit_mask(ny, nx, filename=weight_dataset_name)
-    test_bit_mask(weight_dataset_name)
+    expected_neighbors = ny * nx - 1
+    assert expected_neighbors == test_bit_mask(weight_dataset_name)
 
     # output directory to store the simulated data for this unit test
     output_simulation_dir = "simulations"
