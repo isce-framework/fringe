@@ -160,11 +160,46 @@ class BitMask:
         self.nx = nx
 
     def getbit(self, mask, ii, jj):
+        # Note: the nx is a half window size, and this is assuming 
+        # jj goes from (-nx, nx) and ii goes from (-ny, ny)
         flat = (ii + self.ny) * (2 * self.nx + 1) + jj + self.nx
         num = flat // 8
         bit = flat % 8
         # print(f"{ii = }, {jj = }, {flat = }, {num = }, {bit = }, {mask[num] = }")
         return (mask[num] >> bit) & 1
+
+
+def load_neighborhood(filename, row, col):
+    """Get the neighborhood of a pixel as a numpy array
+
+    Parameters
+    ----------
+    row : int
+        Row of the pixel
+    col: int
+        column of pixel
+    
+    Returns
+    -------
+    neighborhood : numpy array (dtype = np.bool)
+    """
+    ds = gdal.Open(filename, gdal.GA_ReadOnly)
+    nx = int(ds.GetMetadataItem("HALFWINDOWX"))
+    ny = int(ds.GetMetadataItem("HALFWINDOWY"))
+    # nbands = ds.RasterCount
+    # Shape: (nbands, 1, 1)
+    pixel = ds.ReadAsArray(xoff=col, yoff=row, xsize=1, ysize=1)
+    ds = None
+
+    pixel = pixel.ravel()
+    assert pixel.view('uint8').shape[0] == 4 * len(pixel)
+    # 1D version of neighborhood, padded with zeros
+    neighborhood = np.unpackbits(pixel.view('uint8'), bitorder='little')
+    wx = 2 * nx + 1
+    wy = 2 * ny + 1
+    ntotal = wx * wy
+    assert np.all(neighborhood[ntotal:] == 0)
+    return neighborhood[:ntotal].reshape((wy, wx))
 
 
 def test_bit_mask(filename):
@@ -301,6 +336,9 @@ def main():
     simulate_bit_mask(ny, nx, filename=weight_dataset_name)
     expected_neighbors = ny * nx - 1
     assert expected_neighbors == test_bit_mask(weight_dataset_name)
+    expected_neighborhood = np.ones((ny, nx), dtype=np.uint8)
+    expected_neighborhood[0, 0] = 0
+    np.testing.assert_array_equal(expected_neighborhood, load_neighborhood(weight_dataset_name, 0, 0))
 
     # output directory to store the simulated data for this unit test
     output_simulation_dir = "simulations"
