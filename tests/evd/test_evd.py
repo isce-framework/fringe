@@ -184,16 +184,10 @@ def test_bit_mask(filename):
 
     wy, wx = (2 * ny + 1), (2 * nx + 1)
     npix = wx * wy
-    bitmask = np.zeros(npix, dtype=bool)
     count = 0
-    ind = 0
     for ii in range(-ny, ny + 1):
         for jj in range(-nx, nx + 1):
-            flag = masker.getbit(mask, ii, jj)
-            bitmask[ind] = flag == 1
-            if flag:
-                count += 1
-            ind += 1
+            count += masker.getbit(mask, ii, jj)
 
     return count
 
