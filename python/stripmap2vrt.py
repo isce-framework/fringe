@@ -180,7 +180,7 @@ if __name__ == '__main__':
                                        xmin = xmin, ymin = ymin,
                                        width = width,
                                        height = height,
-                                       PATH = os.path.abspath( os.path.join(inps.indir, 'geom_master', val+'.rdr')),
+                                       PATH = os.path.abspath( os.path.join(inps.indir, 'geom_reference', val+'.rdr')),
                                        linewidth = width * 8))
 
 
