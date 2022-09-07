@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 from os import fspath, path
+
 import numpy as np
 from matplotlib.widgets import CheckButtons
 
@@ -8,7 +9,7 @@ from matplotlib.widgets import CheckButtons
 def plot(
     nmap_filename,
     slc_stack_filename=None,
-    slc_stack_bands=[1, 2, 3],
+    slc_stack_bands=(1, 2, 3),
     slc_filename=None,
     ps_filename=None,
     alpha_nmap=0.8,
@@ -25,7 +26,7 @@ def plot(
     slc = _load_slc(slc_stack_filename, slc_stack_bands, slc_filename)
 
     fig, ax = plt.subplots()
-    axim_slc = ax.imshow(_scale_mag(slc), cmap="gray")
+    ax.imshow(_scale_mag(slc), cmap="gray")
 
     # Also overlay the PS pixels, if passed
     ps = _load_ps(ps_filename)
@@ -89,7 +90,8 @@ def plot(
             origin="lower",
         )
         # Remove old neighborhood patches
-        [p.remove() for p in ax.patches]
+        for p in ax.patches:
+            p.remove()
         # add a rectangle around the neighborhood
         rect = patches.Rectangle(
             (extent[0], extent[2]),
