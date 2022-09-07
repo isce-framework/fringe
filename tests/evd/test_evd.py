@@ -161,7 +161,7 @@ class BitMask:
         self.nx = nx
 
     def getbit(self, mask, ii, jj):
-        # Note: the nx is a half window size, and this is assuming 
+        # Note: the nx is a half window size, and this is assuming
         # jj goes from (-nx, nx) and ii goes from (-ny, ny)
         flat = (ii + self.ny) * (2 * self.nx + 1) + jj + self.nx
         num = flat // 8
@@ -179,7 +179,7 @@ def load_neighborhood(filename, row, col):
         Row of the pixel
     col: int
         column of pixel
-    
+
     Returns
     -------
     neighborhood : numpy array (dtype = np.bool)
@@ -227,8 +227,6 @@ def test_bit_mask(filename):
 
 
 def write_slc_stack(neighbor_stack, output_slc_dir, nx, ny, dt=12):
-    if os.path.exists(output_slc_dir):
-        shutil.rmtree(output_slc_dir)
     os.makedirs(output_slc_dir, exist_ok=False)
 
     nslc = neighbor_stack.shape[0]
@@ -249,8 +247,6 @@ def write_slc_stack(neighbor_stack, output_slc_dir, nx, ny, dt=12):
 
 
 def write_dummy_geometry(output_dir, nx, ny):
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
     os.makedirs(output_dir, exist_ok=False)
     lat_name = os.path.join(output_dir, "lat.rdr.full")
     lon_name = os.path.join(output_dir, "lon.rdr.full")
@@ -348,6 +344,9 @@ def main():
 
     # output directory to store the simulated data for this unit test
     output_simulation_dir = "simulations"
+    if os.path.exists(output_simulation_dir):
+        shutil.rmtree(output_simulation_dir)
+
     # output subdirectory to store SLCs
     output_slc_dir = os.path.join(output_simulation_dir, "SLC")
     # write flat binary SLCs that Fringe can read
