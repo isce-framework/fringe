@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
-from array import array
 import datetime
 import glob
 import os
 import re
+import shutil
+from array import array
+
 import numpy as np
 from osgeo import gdal
+
 
 def simulate_noise(corr_matrix: np.array) -> np.array:
     N = corr_matrix.shape[0]
@@ -21,7 +24,6 @@ def simulate_noise(corr_matrix: np.array) -> np.array:
     return slc
 
 def simulate_neighborhood_stack(corr_matrix: np.array, neighbor_samples: int = 200) -> np.array:
-
     nslc = corr_matrix.shape[0]
     # A 2D matrix for a neighborhood over time.
     # Each column is the neighborhood complex data for each acquisition date
@@ -48,12 +50,12 @@ def simulate_coherence_matrix(t, gamma0, gamma_inf, Tau0, ph):
 
 
 def simulate_phase_timeSeries(
-        time_series_length: int = 365, acquisition_interval: int = 12, signal_rate: float = 1.0, std_random: float = 0, k: int = 1
-        ):
+    time_series_length: int = 365, acquisition_interval: int = 12, signal_rate: float = 1.0, std_random: float = 0, k: int = 1
+):
     # time_series_length: length of time-series in days
-    # acquisition_interval: time-differense between subsequent acquisitions (days)
+    # acquisition_interval: time-difference between subsequent acquisitions (days)
     # signal_rate: linear rate of the signal (rad/year)
-    # k: seasonal parameter, 1 for annaual and  2 for semi-annual
+    # k: seasonal parameter, 1 for annual and  2 for semi-annual
     t = np.arange(0, time_series_length, acquisition_interval)
     signal_phase = signal_rate * (t - t[0]) / 365.0
     if k > 0:
@@ -92,15 +94,14 @@ def compute_covariance_matrix(neighbor_stack):
 
 
 def estimate_evd(cov_mat):
-
-    # estimate the wrapped phase based on the eigen value decomposition of the covariance matrix
+    # estimate the wrapped phase based on the eigenvalue decomposition of the covariance matrix
     w, v = np.linalg.eigh(cov_mat)
 
-    # the last eignevalue is the maximum eigenvalue
+    # the last eigenvalue is the maximum eigenvalue
     # However let's check to make sure
     ind_max = np.argmax(w)
 
-    # the eignevector corresponding to the largest eigenvalue
+    # the eigenvector corresponding to the largest eigenvalue
     # of the covariance matrix is the solution
     evd_estimate = v[:, ind_max]
 
@@ -110,28 +111,18 @@ def estimate_evd(cov_mat):
     return evd_estimate
 
 
-def simulate_bit_mask(ny, nx, filename="neighborhood_map"):
+def simulate_bit_mask(wy, wx, filename="neighborhood_map"):
 
     # number of uint32 bytes needed to store weights
-    number_of_bytes = np.ceil((ny * nx) / 32)
-
-    flags = np.ones((ny, nx), dtype=np.bool_)
-    flag_bits = np.zeros((ny, nx), dtype=np.uint8)
-
-    for ii in range(ny):
-        for jj in range(nx):
-            flag_bits[ii, jj] = flags[ii, jj].astype(np.uint8)
-
-    # create the weight dataset for 1 neighborhood
-    cols = nx
-    rows = ny
+    number_of_bytes = np.ceil((wy * wx) / 32)
+    # create the weight dataset for 1 neighborhood (a single pixel)
     n_bands = int(number_of_bytes)
     drv = gdal.GetDriverByName("ENVI")
     options = ["INTERLEAVE=BIP"]
-    ds = drv.Create(filename, cols, rows, n_bands, gdal.GDT_UInt32, options)
+    ds = drv.Create(filename, 1, 1, n_bands, gdal.GDT_UInt32, options)
 
-    half_window_y = int(ny / 2)
-    half_window_x = int(nx / 2)
+    half_window_y = int(wy / 2)
+    half_window_x = int(wx / 2)
 
     ds.SetMetadata(
         {"HALFWINDOWX": str(half_window_x), "HALFWINDOWY": str(half_window_y)}
@@ -140,13 +131,14 @@ def simulate_bit_mask(ny, nx, filename="neighborhood_map"):
 
     # above we created the ENVI hdr. Now let's write some data into the binary file
 
-    # Let's assume in the neighborhood of nx*ny all pixels are
-    # similar to the center pixel
-    s = "1" * (nx * ny * n_bands * 4 * 8)
+    # Let's assume in the neighborhood of wx*wy all pixels are
+    # similar to the center pixel, except the top left (first one)
+    s = "1" * wx * wy
+    s = "0" + s[1:]
+
+    bits = s.ljust(n_bands * 4 * 8, "0")  # pad it to length n_bands*32
 
     bin_array = array("B")
-    bits = s.ljust(n_bands * nx * ny * 4 * 8, "0")  # pad it to length n_bands*32
-
     for octect in re.findall(r"\d{8}", bits):  # split it in 4 octects
         bin_array.append(int(octect[::-1], 2))  # reverse them and append it
 
@@ -162,17 +154,53 @@ class BitMask:
 
         Parameters
         ----------
-        ny: Number of lines
-        nx: Number of pixels
+        ny: Half window size in y
+        nx: Half window size in x
         """
         self.ny = ny
         self.nx = nx
 
     def getbit(self, mask, ii, jj):
+        # Note: the nx is a half window size, and this is assuming
+        # jj goes from (-nx, nx) and ii goes from (-ny, ny)
         flat = (ii + self.ny) * (2 * self.nx + 1) + jj + self.nx
         num = flat // 8
         bit = flat % 8
+        # print(f"{ii = }, {jj = }, {flat = }, {num = }, {bit = }, {mask[num] = }")
         return (mask[num] >> bit) & 1
+
+
+def load_neighborhood(filename, row, col):
+    """Get the neighborhood of a pixel as a numpy array
+
+    Parameters
+    ----------
+    row : int
+        Row of the pixel
+    col: int
+        column of pixel
+
+    Returns
+    -------
+    neighborhood : numpy array (dtype = np.bool)
+    """
+    ds = gdal.Open(filename, gdal.GA_ReadOnly)
+    nx = int(ds.GetMetadataItem("HALFWINDOWX"))
+    ny = int(ds.GetMetadataItem("HALFWINDOWY"))
+    # nbands = ds.RasterCount
+    # Shape: (nbands, 1, 1)
+    pixel = ds.ReadAsArray(xoff=col, yoff=row, xsize=1, ysize=1)
+    ds = None
+
+    pixel = pixel.ravel()
+    assert pixel.view('uint8').shape[0] == 4 * len(pixel)
+    # 1D version of neighborhood, padded with zeros
+    neighborhood = np.unpackbits(pixel.view('uint8'), bitorder='little')
+    wx = 2 * nx + 1
+    wy = 2 * ny + 1
+    ntotal = wx * wy
+    assert np.all(neighborhood[ntotal:] == 0)
+    return neighborhood[:ntotal].reshape((wy, wx))
 
 
 def test_bit_mask(filename):
@@ -180,32 +208,20 @@ def test_bit_mask(filename):
     ds = gdal.Open(filename, gdal.GA_ReadOnly)
     nx = int(ds.GetMetadataItem("HALFWINDOWX"))
     ny = int(ds.GetMetadataItem("HALFWINDOWY"))
-    width = ds.RasterXSize
     bands = ds.RasterCount
     ds = None
 
-    # we have only one neighborhood around one pixel
-    line = 5
-    pixel = 5
+    # we have only one neighborhood around one pixel, so
+    # all bits are at the opening of the file
+    with open(filename, "rb") as f:
+        mask = f.read(bands * 4)
 
-    fid = open(filename, "rb")
-    fid.seek((line * width + pixel) * bands * 4)
-    mask = fid.read(bands * 4)
-    fid.close()
-
-    npix = (2 * ny + 1) * (2 * nx + 1)
     masker = BitMask(ny, nx)
 
-    bitmask = np.zeros(npix, dtype=bool)
     count = 0
-    ind = 0
     for ii in range(-ny, ny + 1):
         for jj in range(-nx, nx + 1):
-            flag = masker.getbit(mask, ii, jj)
-            bitmask[ind] = flag == 1
-            if flag:
-                count += 1
-            ind += 1
+            count += masker.getbit(mask, ii, jj)
 
     return count
 
@@ -280,7 +296,7 @@ def main():
         k=2,
     )
 
-    # paraneters of a coherence model
+    # parameters of a coherence model
     gamma0 = 0.999
     gamma_inf = 0.99
     Tau0 = 72
@@ -291,7 +307,7 @@ def main():
     # number of samples in the neighborhood
     neighbor_samples = ny * nx
 
-    # simulate a complex covraince matrix based on the
+    # simulate a complex covariance matrix based on the
     # simulated phase and coherence model
     simulated_covariance_matrix = simulate_coherence_matrix(
         t, gamma0, gamma_inf, Tau0, signal_phase
@@ -316,13 +332,21 @@ def main():
     rmse_evd = np.sqrt(np.sum(residual_evd**2, 0) / len(t))
 
     #######################
-    # write nmap which all the neighbors are self similar with the center pixel
     weight_dataset_name = "neighborhood_map"
     simulate_bit_mask(ny, nx, filename=weight_dataset_name)
-    test_bit_mask(weight_dataset_name)
+    # write nmap which all the neighbors are self similar with the center pixel except
+    # for the upper left corner pixel
+    expected_neighbors = ny * nx - 1
+    assert expected_neighbors == test_bit_mask(weight_dataset_name)
+    expected_neighborhood = np.ones((ny, nx), dtype=np.uint8)
+    expected_neighborhood[0, 0] = 0
+    np.testing.assert_array_equal(expected_neighborhood, load_neighborhood(weight_dataset_name, 0, 0))
 
     # output directory to store the simulated data for this unit test
     output_simulation_dir = "simulations"
+    if os.path.exists(output_simulation_dir):
+        shutil.rmtree(output_simulation_dir)
+
     # output subdirectory to store SLCs
     output_slc_dir = os.path.join(output_simulation_dir, "SLC")
     # write flat binary SLCs that Fringe can read
@@ -423,14 +447,6 @@ def main():
     assert rmse_fringe_evd <= 10
     assert rmse_fringe_mle <= 10
 
-    # check the neighborhood map
-    count = test_bit_mask(weight_dataset_name)
-    print(f"count: {count}")
-    # we have simulated an ideah homogeneous neighborhood of nx*ny.
-    # Therefore the number of self-similar pixels in the neighborhood
-    # should be nx*ny
-    assert count == nx * ny
 
 if __name__ == "__main__":
-
     main()
