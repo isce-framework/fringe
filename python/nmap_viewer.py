@@ -181,7 +181,7 @@ def get_cli_args():
         "--slc-stack-bands",
         nargs="+",
         type=int,
-        default=[1, 2],
+        default=[1, 2, 3, 4, 5],
         help="Bands to use from SLC stack file",
     )
     parser.add_argument(
