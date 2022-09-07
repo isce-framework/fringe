@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-from array import array
 import datetime
 import glob
 import os
 import re
+from array import array
+
 import numpy as np
 from osgeo import gdal
+
 
 def simulate_noise(corr_matrix: np.array) -> np.array:
     N = corr_matrix.shape[0]
@@ -48,12 +50,12 @@ def simulate_coherence_matrix(t, gamma0, gamma_inf, Tau0, ph):
 
 
 def simulate_phase_timeSeries(
-        time_series_length: int = 365, acquisition_interval: int = 12, signal_rate: float = 1.0, std_random: float = 0, k: int = 1
-        ):
+    time_series_length: int = 365, acquisition_interval: int = 12, signal_rate: float = 1.0, std_random: float = 0, k: int = 1
+):
     # time_series_length: length of time-series in days
-    # acquisition_interval: time-differense between subsequent acquisitions (days)
+    # acquisition_interval: time-difference between subsequent acquisitions (days)
     # signal_rate: linear rate of the signal (rad/year)
-    # k: seasonal parameter, 1 for annaual and  2 for semi-annual
+    # k: seasonal parameter, 1 for annual and  2 for semi-annual
     t = np.arange(0, time_series_length, acquisition_interval)
     signal_phase = signal_rate * (t - t[0]) / 365.0
     if k > 0:
@@ -92,15 +94,14 @@ def compute_covariance_matrix(neighbor_stack):
 
 
 def estimate_evd(cov_mat):
-
-    # estimate the wrapped phase based on the eigen value decomposition of the covariance matrix
+    # estimate the wrapped phase based on the eigenvalue decomposition of the covariance matrix
     w, v = np.linalg.eigh(cov_mat)
 
-    # the last eignevalue is the maximum eigenvalue
+    # the last eigenvalue is the maximum eigenvalue
     # However let's check to make sure
     ind_max = np.argmax(w)
 
-    # the eignevector corresponding to the largest eigenvalue
+    # the eigenvector corresponding to the largest eigenvalue
     # of the covariance matrix is the solution
     evd_estimate = v[:, ind_max]
 
@@ -295,7 +296,7 @@ def main():
         k=2,
     )
 
-    # paraneters of a coherence model
+    # parameters of a coherence model
     gamma0 = 0.999
     gamma_inf = 0.99
     Tau0 = 72
@@ -306,7 +307,7 @@ def main():
     # number of samples in the neighborhood
     neighbor_samples = ny * nx
 
-    # simulate a complex covraince matrix based on the
+    # simulate a complex covariance matrix based on the
     # simulated phase and coherence model
     simulated_covariance_matrix = simulate_coherence_matrix(
         t, gamma0, gamma_inf, Tau0, signal_phase
