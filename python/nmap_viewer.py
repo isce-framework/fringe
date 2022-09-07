@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import argparse
-from os import fspath
+from os import fspath, path
 import numpy as np
+from matplotlib.widgets import CheckButtons
 
 
 def plot(
@@ -9,6 +10,7 @@ def plot(
     slc_stack_filename=None,
     slc_stack_bands=[1, 2, 3],
     slc_filename=None,
+    ps_filename=None,
     alpha_nmap=0.8,
     cmap_nmap="Reds_r",
     block=False,
@@ -19,16 +21,40 @@ def plot(
     """
     import matplotlib.pyplot as plt
     from matplotlib import patches
+
     slc = _load_slc(slc_stack_filename, slc_stack_bands, slc_filename)
 
     fig, ax = plt.subplots()
     axim_slc = ax.imshow(_scale_mag(slc), cmap="gray")
+
+    # Also overlay the PS pixels, if passed
+    ps = _load_ps(ps_filename)
+    if ps is not None:
+        ax2 = fig.add_axes((0.9, 0.9, 0.1, 0.1))
+        ps_img = np.ma.masked_where(ps == 0, ps)
+        axim_ps = ax.imshow(ps_img, cmap="winter_r", alpha=0.95, interpolation="nearest")
+
+        labels = ["PS"]
+        check = CheckButtons(ax2, labels, [True])
+
+        def show_ps(label):
+            # Flip the state of the checkbox
+            # showing = not showing
+            axim_ps.set_visible(not axim_ps.get_visible())
+            fig.canvas.draw()
+
+        check.on_clicked(show_ps)
+        num_base_images = 2
+    else:
+        num_base_images = 1
 
     ny, nx = _get_windows(nmap_filename)
 
     def onclick(event):
         # Ignore right/middle click, clicks off image
         if event.button != 1 or not event.inaxes:
+            return
+        if event.inaxes != ax:
             return
         # Check if the toolbar has zoom or pan active
         # https://stackoverflow.com/a/20712813
@@ -51,7 +77,9 @@ def plot(
         extent = _get_extent(row, col, ny, nx)
 
         # Remove old neighborhood images
-        [img.remove() for img in event.inaxes.get_images() if img != axim_slc]
+        if len(event.inaxes.get_images()) > num_base_images:
+            # event.inaxes.get_images()[1].remove()
+            event.inaxes.get_images()[-1].remove()
 
         ax.imshow(
             n_img,
@@ -80,6 +108,8 @@ def plot(
         fig.canvas.draw()
 
     fig.canvas.mpl_connect("button_press_event", onclick)
+
+
     plt.show(block=block)
 
 
@@ -119,6 +149,7 @@ def load_neighborhood(filename, row, col):
 
 def _get_windows(filename):
     from osgeo import gdal
+
     ds = gdal.Open(fspath(filename), gdal.GA_ReadOnly)
     if "ENVI" in ds.GetMetadataDomainList():
         meta = ds.GetMetadata("ENVI")
@@ -137,8 +168,21 @@ def _get_extent(row, col, ny, nx):
     return col - nx - 0.5, col + nx + 1 - 0.5, row - ny - 0.5, row + ny + 1 - 0.5
 
 
+def _load_ps(ps_filename):
+    from osgeo import gdal
+
+    if ps_filename is not None and path.exists(ps_filename):
+        ds = gdal.Open(fspath(ps_filename), gdal.GA_ReadOnly)
+        ps = ds.ReadAsArray()
+        ds = None
+    else:
+        ps = None
+    return ps
+
+
 def _load_slc(slc_stack_filename, stack_bands, slc_filename):
     from osgeo import gdal
+
     if slc_stack_filename is not None:
         ds = gdal.Open(fspath(slc_stack_filename), gdal.GA_ReadOnly)
         # Average the power of the complex bands
@@ -163,13 +207,13 @@ def _scale_mag(img, exponent=0.3, max_pct=99.95):
 
 
 def get_cli_args():
-    """Get command line arguments"""
+    """Get command line arguments."""
     parser = argparse.ArgumentParser(
         description="Interactively view neighborhood maps over an SLC."
     )
     parser.add_argument(
         "-n",
-        "--nmap",
+        "--nmap-file",
         help="Neighborhood map file",
         required=True,
     )
@@ -187,6 +231,11 @@ def get_cli_args():
     parser.add_argument(
         "--slc-file",
         help="Alternative background: a single SLC filename.",
+    )
+    parser.add_argument(
+        "--ps-file",
+        default="PS/ps_pixels",
+        help="PS file to overlay",
     )
     parser.add_argument(
         "--cmap-nmap",
@@ -210,10 +259,11 @@ def get_cli_args():
 def run_cli():
     args = get_cli_args()
     plot(
-        nmap_filename=args.nmap,
+        nmap_filename=args.nmap_file,
         slc_stack_filename=args.slc_stack_file,
         slc_stack_bands=args.slc_stack_bands,
         slc_filename=args.slc_file,
+        ps_filename=args.ps_file,
         cmap_nmap=args.cmap_nmap,
         alpha_nmap=args.alpha_nmap,
         block=not args.no_block,
