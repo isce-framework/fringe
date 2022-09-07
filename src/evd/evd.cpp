@@ -210,7 +210,7 @@ int evd_process(evdOptions *opts)
         for(int b=1; b<=nbands; b++)
         {
             const char* date = inDataset->GetRasterBand(b)->GetMetadataItem("Date", "slc");
-            if (strlen(date) != 8)
+            if (strnlen(date, 9) != 8)
             {
                 std::cout << "Band " << b << " does not appear to have Date information in slc metadata domain \n";
                 GDALClose(inDataset);
@@ -270,10 +270,10 @@ int evd_process(evdOptions *opts)
             mOptions = CSLSetNameValue(mOptions, "INTERLEAVE", "BIP");
             mOptions = CSLSetNameValue(mOptions, "SUFFIX", "ADD");
 
-            const char* fname = CPLStrdup(CPLFormFilename(opts->outputFolder.c_str(), dates[b-1].c_str(), ".slc"));
-            std::cout << "Input: " << fname <<  " " << strlen(fname) <<  "\n";
+            std::string fname = CPLFormFilename(opts->outputFolder.c_str(), dates[b-1].c_str(), ".slc");
+            std::cout << "Input: " << fname <<  " " << fname.size() <<  "\n";
 
-            GDALDataset *temp = (GDALDataset*) poDriver->Create(fname, cols, rows, 1, GDT_CFloat32, mOptions);
+            GDALDataset *temp = (GDALDataset*) poDriver->Create(fname.c_str(), cols, rows, 1, GDT_CFloat32, mOptions);
 
             if (temp == NULL)
             {
@@ -307,10 +307,10 @@ int evd_process(evdOptions *opts)
             mOptions = CSLSetNameValue(mOptions, "INTERLEAVE", "BIP");
             mOptions = CSLSetNameValue(mOptions, "SUFFIX", "ADD");
 
-            const char* fname = CPLStrdup(CPLFormFilename(opts->outputFolder.c_str(), "tcorr.bin", NULL));
+            std::string fname = CPLFormFilename(opts->outputFolder.c_str(), "tcorr.bin", NULL);
 
-            std::cout << "Corr: " << fname <<  " " << strlen(fname) << "\n";
-            corrDataset = (GDALDataset*) poDriver->Create(fname, cols, rows, 1, GDT_Float32, mOptions);
+            std::cout << "Corr: " << fname <<  " " << fname.size() << "\n";
+            corrDataset = (GDALDataset*) poDriver->Create(fname.c_str(), cols, rows, 1, GDT_Float32, mOptions);
 
             if (corrDataset == NULL)
             {
@@ -340,10 +340,10 @@ int evd_process(evdOptions *opts)
             mOptions = CSLSetNameValue(mOptions, "INTERLEAVE", "BIP");
             mOptions = CSLSetNameValue(mOptions, "SUFFIX", "ADD");
 
-            const char* fname = CPLStrdup(CPLFormFilename(opts->outputCompressedSlcFolder.c_str(), opts->compSlc.c_str(), NULL));
+            std::string fname = CPLFormFilename(opts->outputCompressedSlcFolder.c_str(), opts->compSlc.c_str(), NULL);
 
-            std::cout << "Compressed SLC: " << fname <<  " " << strlen(fname) << "\n";
-            compDataset = (GDALDataset*) poDriver->Create(fname, cols, rows, 1, GDT_CFloat32, mOptions);
+            std::cout << "Compressed SLC: " << fname <<  " " << fname.size() << "\n";
+            compDataset = (GDALDataset*) poDriver->Create(fname.c_str(), cols, rows, 1, GDT_CFloat32, mOptions);
 
             if (compDataset == NULL)
             {
