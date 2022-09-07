@@ -4,6 +4,7 @@ import datetime
 import glob
 import os
 import re
+import shutil
 from array import array
 
 import numpy as np
@@ -23,7 +24,6 @@ def simulate_noise(corr_matrix: np.array) -> np.array:
     return slc
 
 def simulate_neighborhood_stack(corr_matrix: np.array, neighbor_samples: int = 200) -> np.array:
-
     nslc = corr_matrix.shape[0]
     # A 2D matrix for a neighborhood over time.
     # Each column is the neighborhood complex data for each acquisition date
@@ -227,6 +227,8 @@ def test_bit_mask(filename):
 
 
 def write_slc_stack(neighbor_stack, output_slc_dir, nx, ny, dt=12):
+    if os.path.exists(output_slc_dir):
+        shutil.rmtree(output_slc_dir)
     os.makedirs(output_slc_dir, exist_ok=False)
 
     nslc = neighbor_stack.shape[0]
@@ -247,6 +249,8 @@ def write_slc_stack(neighbor_stack, output_slc_dir, nx, ny, dt=12):
 
 
 def write_dummy_geometry(output_dir, nx, ny):
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
     os.makedirs(output_dir, exist_ok=False)
     lat_name = os.path.join(output_dir, "lat.rdr.full")
     lon_name = os.path.join(output_dir, "lon.rdr.full")
@@ -332,9 +336,10 @@ def main():
     rmse_evd = np.sqrt(np.sum(residual_evd**2, 0) / len(t))
 
     #######################
-    # write nmap which all the neighbors are self similar with the center pixel
     weight_dataset_name = "neighborhood_map"
     simulate_bit_mask(ny, nx, filename=weight_dataset_name)
+    # write nmap which all the neighbors are self similar with the center pixel except
+    # for the upper left corner pixel
     expected_neighbors = ny * nx - 1
     assert expected_neighbors == test_bit_mask(weight_dataset_name)
     expected_neighborhood = np.ones((ny, nx), dtype=np.uint8)
@@ -443,14 +448,6 @@ def main():
     assert rmse_fringe_evd <= 10
     assert rmse_fringe_mle <= 10
 
-    # check the neighborhood map
-    count = test_bit_mask(weight_dataset_name)
-    print(f"count: {count}")
-    # we have simulated an ideah homogeneous neighborhood of nx*ny.
-    # Therefore the number of self-similar pixels in the neighborhood
-    # should be nx*ny
-    assert count == nx * ny
 
 if __name__ == "__main__":
-
     main()
