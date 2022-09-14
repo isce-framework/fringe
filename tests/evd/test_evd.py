@@ -378,9 +378,14 @@ def main():
     cmd = f"evd.py -i {coreg_stack_dir}/slcs_base.vrt -w {nmap_output} -o {evd_output} -m EVD"
     os.system(cmd)
 
-    # run fringe evd module with MLE estimato
+    # run fringe evd module with MLE estimator
     mle_output = os.path.join(output_timeseries_dir, "mle")
     cmd = f"evd.py -i {coreg_stack_dir}/slcs_base.vrt -w {nmap_output} -o {mle_output} -m MLE"
+    os.system(cmd)
+
+    # run fringe phase_linking module
+    phase_link_output = os.path.join(output_timeseries_dir, "phase_link")
+    cmd = f"phase_link.py -i {coreg_stack_dir}/slcs_base.vrt -w {nmap_output} -o {phase_link_output} -m MLE"
     os.system(cmd)
 
     # read the estimated wrapped phase
@@ -390,6 +395,8 @@ def main():
     est_wrapped_phase_fringe_evd = read_wrapped_phase(evd_output, x0, y0)
 
     est_wrapped_phase_fringe_mle = read_wrapped_phase(mle_output, x0, y0)
+
+    est_wrapped_phase_fringe_phase_link = read_wrapped_phase(phase_link_output, x0, y0)
 
     # compare with simulated phase and calculate RMSE
     print(signal_phase.shape)
@@ -402,9 +409,16 @@ def main():
         np.exp(1j * signal_phase) * np.conjugate(est_wrapped_phase_fringe_mle)
     )
     rmse_fringe_mle = np.degrees(np.sqrt(np.sum(residual_mle**2, 0) / len(t)))
+
+    residual_phase_link = np.angle(
+        np.exp(1j * signal_phase) * np.conjugate(est_wrapped_phase_fringe_phase_link)
+    )
+    rmse_fringe_phase_link = np.degrees(np.sqrt(np.sum(residual_phase_link**2, 0) / len(t)))
+
     print("rmse for evd [degrees]:", np.degrees(rmse_evd))
     print("rmse for evd fringe [degrees]:", rmse_fringe_evd)
     print("rmse for mle fringe [degrees]:", rmse_fringe_mle)
+    print("rmse for phase-link fringe [degrees]:", rmse_fringe_phase_link)
 
 
     #######################
@@ -446,6 +460,7 @@ def main():
     # check the RMSE of the FRINGE results
     assert rmse_fringe_evd <= 10
     assert rmse_fringe_mle <= 10
+    assert rmse_fringe_phase_link <= 10
 
 
 if __name__ == "__main__":
