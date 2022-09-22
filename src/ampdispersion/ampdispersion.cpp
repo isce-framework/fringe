@@ -283,6 +283,10 @@ int ampdispersion_process(ampdispersionOptions *opts)
 
     std::cout << "ampdispersion processing time: " << (t_end-t_start)/60.0 << " mins \n";
 
+    //Annotate the output datasets with number of SLCs/nbands used for future reference
+    status = daDataset->SetMetadataItem("N", std::to_string(nbands).c_str(), "ENVI");
+    status = meanampDataset->SetMetadataItem("N", std::to_string(nbands).c_str(), "ENVI");
+
     //Close the datasets
     GDALClose(inDataset);
     GDALClose(daDataset);
