@@ -7,5 +7,6 @@ install (PROGRAMS   uavsar2vrt.py
                     Network.py
                     StackVRT.py
                     integratePS.py
+                    nmap_viewer.py
         DESTINATION ${FRINGE_BINDIR}
         COMPONENT python)
